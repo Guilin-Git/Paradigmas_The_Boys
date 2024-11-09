@@ -1,4 +1,3 @@
-# database.py
 import sqlite3
 
 def create_connection():
@@ -69,6 +68,7 @@ def update_hero(hero_id, updated_data):
         birth_place = ?, powers = ?, strength_level = ?, popularity = ?, status = ?, battle_history = ?
     WHERE id = ?
     ''', (*updated_data, hero_id))
+    
     conn.commit()
     conn.close()
 
