@@ -26,6 +26,24 @@ def create_table():
     conn.commit()
     conn.close()
 
+def create_crimes_table():
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS crimes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        crime_name TEXT,
+        crime_description TEXT,
+        hero_id INTEGER,
+        crime_date TEXT,
+        hero_name TEXT,
+        crime_severity INTEGER,
+        FOREIGN KEY (hero_id) REFERENCES heroes(id)
+    )
+    ''')
+    conn.commit()
+    conn.close()
+
 def create_trigger():
     conn = create_connection()
     cursor = conn.cursor()
@@ -49,6 +67,16 @@ def add_hero(hero_data):
                         birth_place, powers, strength_level, popularity, status, battle_history)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', hero_data)
+    conn.commit()
+    conn.close()
+
+def add_crime(crime_data):
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+    INSERT INTO crimes (crime_name, crime_description, hero_id, crime_date, hero_name, crime_severity)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ''', crime_data)
     conn.commit()
     conn.close()
 
@@ -93,7 +121,25 @@ def search_heroes(name=None, status=None, popularity=None):
     conn.close()
     return results
 
-# Função para obter um herói por ID
+def search_crimes(hero_name=None, crime_severity=None):
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    query = "SELECT * FROM crimes WHERE 1=1"
+    params = []
+    
+    if hero_name:
+        query += " AND hero_name LIKE ?"
+        params.append(f"%{hero_name}%")
+    if crime_severity:
+        query += " AND crime_severity = ?"
+        params.append(crime_severity)
+    
+    cursor.execute(query, params)
+    results = cursor.fetchall()
+    conn.close()
+    return results
+
 def get_hero_by_id(hero_id):
     conn = create_connection()
     cursor = conn.cursor()
@@ -104,4 +150,5 @@ def get_hero_by_id(hero_id):
 
 # Initialize the database and trigger
 create_table()
+create_crimes_table()
 create_trigger()

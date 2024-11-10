@@ -1,7 +1,8 @@
 import dearpygui.dearpygui as dpg
-from database import add_hero, remove_hero, update_hero, search_heroes, get_hero_by_id
+from database import add_hero, remove_hero, update_hero, search_heroes, get_hero_by_id, add_crime, search_crimes
 import os
 import sqlite3
+
 # Configuração de cor e estilo personalizada
 def setup_theme():
     with dpg.theme(tag="custom_theme"):
@@ -40,6 +41,8 @@ def add_background_image():
             dpg.add_button(label="Search Hero", callback=open_search_window)
             dpg.add_button(label="Update Hero", callback=open_update_hero_window)
             dpg.add_button(label="Remove Hero", callback=open_remove_hero_window)
+            dpg.add_button(label="Add Crime", callback=open_add_crime_window)
+            dpg.add_button(label="Search Crimes", callback=open_search_crime_window)
             dpg.bind_item_theme("main_window", "custom_theme")  # Aplica o tema personalizado
     except TypeError:
         print("Erro: Imagem de fundo não pôde ser carregada. Verifique o caminho do arquivo.")
@@ -117,7 +120,6 @@ def remove_hero_callback(sender, app_data, user_data):
     remove_hero_by_id(hero_id)
     dpg.delete_item("remove_hero_window")
 
-
 def open_remove_hero_window():
     if dpg.does_item_exist("remove_hero_window"):
         dpg.focus_item("remove_hero_window")
@@ -134,7 +136,6 @@ def remove_hero_by_id(hero_id):
     cursor.execute("DELETE FROM heroes WHERE id = ?", (hero_id,))
     conn.commit()
     conn.close()
-
 
 def add_hero_callback(sender, app_data, user_data):
     hero_data = [
@@ -164,6 +165,27 @@ def open_add_hero_window():
             dpg.add_input_text(label="Battle History", tag="battle_history")
             dpg.add_button(label="Add Hero", callback=add_hero_callback)
 
+def add_crime_callback(sender, app_data, user_data):
+    crime_data = [
+        dpg.get_value("crime_hero_id"), dpg.get_value("crime_hero_name"), dpg.get_value("crime_name"),
+        dpg.get_value("crime_description"), dpg.get_value("crime_date"), dpg.get_value("crime_severity")
+    ]
+    add_crime(crime_data)
+    dpg.delete_item("add_crime_window")
+
+def open_add_crime_window():
+    if dpg.does_item_exist("add_crime_window"):
+        dpg.focus_item("add_crime_window")
+    else:
+        with dpg.window(label="Add Crime", modal=True, tag="add_crime_window"):
+            dpg.add_input_int(label="Hero ID", tag="crime_hero_id")
+            dpg.add_input_text(label="Hero Name", tag="crime_hero_name")
+            dpg.add_input_text(label="Crime Name", tag="crime_name")
+            dpg.add_input_text(label="Crime Description", tag="crime_description")
+            dpg.add_input_text(label="Crime Date (dd/mm/yyyy)", tag="crime_date")
+            dpg.add_input_text(label="Crime Severity", tag="crime_severity")
+            dpg.add_button(label="Add Crime", callback=add_crime_callback)
+
 def search_hero_callback(sender, app_data, user_data):
     name = dpg.get_value("search_name")
     results = search_heroes(name=name)
@@ -183,6 +205,29 @@ def open_search_window():
             dpg.add_input_text(label="Hero Name", tag="search_name")
             dpg.add_button(label="Search", callback=search_hero_callback)
             with dpg.group(tag="search_results"):
+                pass
+
+def search_crime_callback(sender, app_data, user_data):
+    hero_name = dpg.get_value("search_crime_hero_name")
+    crime_severity = dpg.get_value("search_crime_severity")
+    results = search_crimes(hero_name=hero_name, crime_severity=crime_severity)
+    
+    if dpg.does_item_exist("search_crime_results"):
+        dpg.delete_item("search_crime_results", children_only=True)
+    
+    with dpg.group(parent="search_crime_results"):
+        for crime in results:
+            dpg.add_text(f"Crime: {crime[1]}, Hero: {crime[5]}, Severity: {crime[6]}")
+
+def open_search_crime_window():
+    if dpg.does_item_exist("search_crime_window"):
+        dpg.focus_item("search_crime_window")
+    else:
+        with dpg.window(label="Search Crimes", modal=True, tag="search_crime_window"):
+            dpg.add_input_text(label="Hero Name", tag="search_crime_hero_name")
+            dpg.add_input_text(label="Crime Severity", tag="search_crime_severity")
+            dpg.add_button(label="Search", callback=search_crime_callback)
+            with dpg.group(tag="search_crime_results"):
                 pass
 
 def create_main_window():
