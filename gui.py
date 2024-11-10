@@ -1,360 +1,198 @@
-import tkinter as tk
-from tkinter import messagebox
-import database
+import dearpygui.dearpygui as dpg
+from database import add_hero, remove_hero, update_hero, search_heroes, get_hero_by_id
+import os
+import sqlite3
+# Configuração de cor e estilo personalizada
+def setup_theme():
+    with dpg.theme(tag="custom_theme"):
+        with dpg.theme_component(dpg.mvAll):
+            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (25, 25, 25), category=dpg.mvThemeCat_Core)  # Fundo da janela
+            dpg.add_theme_color(dpg.mvThemeCol_Button, (150, 0, 0), category=dpg.mvThemeCat_Core)      # Botões em vermelho
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (200, 0, 0), category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (100, 0, 0), category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(dpg.mvThemeCol_Text, (220, 220, 220), category=dpg.mvThemeCat_Core)    # Texto em branco
+            dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (40, 40, 40), category=dpg.mvThemeCat_Core)    # Campos de entrada
 
-# Funções de exibição das telas
-def show_add_hero():
-    clear_entries()
-    add_frame.pack(fill="both", expand=True)
-    remove_frame.pack_forget()
-    update_frame.pack_forget()
-    search_frame.pack_forget()
-
-def show_remove_hero():
-    clear_entries()
-    add_frame.pack_forget()
-    remove_frame.pack(fill="both", expand=True)
-    update_frame.pack_forget()
-    search_frame.pack_forget()
-
-def show_update_hero():
-    clear_entries()
-    add_frame.pack_forget()
-    remove_frame.pack_forget()
-    update_frame.pack(fill="both", expand=True)
-    search_frame.pack_forget()
-
-def show_search_hero():
-    clear_entries()
-    add_frame.pack_forget()
-    remove_frame.pack_forget()
-    update_frame.pack_forget()
-    search_frame.pack(fill="both", expand=True)
-
-# Funções CRUD
-def add_hero():
-    data = (
-        real_name_entry.get(), hero_name_entry.get(), gender_entry.get(),
-        float(height_entry.get()), float(weight_entry.get()),
-        birth_date_entry.get(), birth_place_entry.get(), powers_entry.get(),
-        int(strength_level_entry.get()), int(popularity_entry.get()),
-        status_entry.get(), battle_history_entry.get()
-    )
-    database.add_hero(data)
-    messagebox.showinfo("Sucesso", "Herói adicionado com sucesso!")
-    clear_entries()
-
-def remove_hero():
-    hero_id = int(id_entry.get())
-    database.remove_hero(hero_id)
-    messagebox.showinfo("Sucesso", "Herói removido com sucesso!")
-    clear_entries()
-
-# Função para carregar dados do herói para atualizar
-def load_hero_for_update():
-    hero_id = int(id_entry_update.get())
-    hero_data = database.search_heroes(name=None, status=None, popularity=None)
-    hero_data = next((hero for hero in hero_data if hero[0] == hero_id), None)
-    
-    if hero_data:
-        real_name_entry_update.delete(0, tk.END)
-        real_name_entry_update.insert(0, hero_data[1])
-        
-        hero_name_entry_update.delete(0, tk.END)
-        hero_name_entry_update.insert(0, hero_data[2])
-
-        gender_entry_update.delete(0, tk.END)
-        gender_entry_update.insert(0, hero_data[3])
-
-        height_entry_update.delete(0, tk.END)
-        height_entry_update.insert(0, str(hero_data[4]))
-
-        weight_entry_update.delete(0, tk.END)
-        weight_entry_update.insert(0, str(hero_data[5]))
-
-        birth_date_entry_update.delete(0, tk.END)
-        birth_date_entry_update.insert(0, hero_data[6])
-
-        birth_place_entry_update.delete(0, tk.END)
-        birth_place_entry_update.insert(0, hero_data[7])
-
-        powers_entry_update.delete(0, tk.END)
-        powers_entry_update.insert(0, hero_data[8])
-
-        strength_level_entry_update.delete(0, tk.END)
-        strength_level_entry_update.insert(0, str(hero_data[9]))
-
-        popularity_entry_update.delete(0, tk.END)
-        popularity_entry_update.insert(0, str(hero_data[10]))
-
-        status_entry_update.delete(0, tk.END)
-        status_entry_update.insert(0, hero_data[11])
-
-        battle_history_entry_update.delete(0, tk.END)
-        battle_history_entry_update.insert(0, hero_data[12])
-        
-        messagebox.showinfo("Sucesso", "Dados do herói carregados para atualização.")
-    else:
-        messagebox.showwarning("Aviso", "Herói não encontrado com o ID especificado.")
-
-def update_hero():
+# Função para carregar a imagem de fundo
+def add_background_image():
     try:
-        hero_id = int(id_entry_update.get())
-    except ValueError:
-        messagebox.showerror("Erro", "Por favor, insira um ID válido.")
-        return
+        # Obter o caminho absoluto para a imagem
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+        image_path = os.path.join(current_directory, "theboys_background.png")
+
+        # Verificar se o arquivo existe
+        if not os.path.exists(image_path):
+            print(f"Erro: O arquivo não foi encontrado no caminho: {image_path}")
+            return
+        
+        # Carregar a imagem
+        width, height, channels, data = dpg.load_image(image_path)
+        
+        # Adicionar a imagem como textura
+        with dpg.texture_registry():
+            dpg.add_static_texture(width, height, data, tag="background_image")
+
+        # Adicionar a imagem à janela principal
+        with dpg.window(label="Hero Database - The Boys", width=800, height=600, tag="main_window"):
+            dpg.add_image("background_image")
+            dpg.add_text("Hero Management System", color=(220, 220, 220))
+            dpg.add_button(label="Add Hero", callback=open_add_hero_window)
+            dpg.add_button(label="Search Hero", callback=open_search_window)
+            dpg.add_button(label="Update Hero", callback=open_update_hero_window)
+            dpg.add_button(label="Remove Hero", callback=open_remove_hero_window)
+            dpg.bind_item_theme("main_window", "custom_theme")  # Aplica o tema personalizado
+    except TypeError:
+        print("Erro: Imagem de fundo não pôde ser carregada. Verifique o caminho do arquivo.")
+
+# Função para carregar os dados do herói para atualização
+def load_hero_data(hero_id):
+    hero = get_hero_by_id(hero_id)
+    if hero:
+        dpg.set_value("update_real_name", hero[1])
+        dpg.set_value("update_hero_name", hero[2])
+        dpg.set_value("update_gender", hero[3])
+        dpg.set_value("update_height", hero[4])
+        dpg.set_value("update_weight", hero[5])
+        dpg.set_value("update_birth_date", hero[6])
+        dpg.set_value("update_birth_place", hero[7])
+        dpg.set_value("update_powers", hero[8])
+        dpg.set_value("update_strength_level", hero[9])
+        dpg.set_value("update_popularity", hero[10])
+        dpg.set_value("update_status", hero[11])
+        dpg.set_value("update_battle_history", hero[12])
+
+def update_hero_callback(sender, app_data, user_data):
+    hero_id = dpg.get_value("update_hero_id")  # Pega o ID do herói a ser atualizado
+    updated_data = [
+        dpg.get_value("update_real_name"), 
+        dpg.get_value("update_hero_name"), 
+        dpg.get_value("update_gender"),
+        dpg.get_value("update_height"), 
+        dpg.get_value("update_weight"), 
+        dpg.get_value("update_birth_date"),
+        dpg.get_value("update_birth_place"), 
+        dpg.get_value("update_powers"), 
+        dpg.get_value("update_strength_level"),
+        dpg.get_value("update_popularity"), 
+        dpg.get_value("update_status"), 
+        dpg.get_value("update_battle_history")
+    ]
+    update_hero(hero_id, updated_data)  # Passa ambos: hero_id e updated_data
+    dpg.delete_item("update_hero_window")
+
+def open_update_hero_window():
+    if dpg.does_item_exist("update_hero_window"):
+        dpg.focus_item("update_hero_window")
+    else:
+        with dpg.window(label="Update Hero", modal=True, tag="update_hero_window"):
+            dpg.add_input_int(label="Hero ID", tag="update_hero_id", callback=lambda: load_hero_data(dpg.get_value("update_hero_id")))
+            dpg.add_input_text(label="Real Name", tag="update_real_name")
+            dpg.add_input_text(label="Hero Name", tag="update_hero_name")
+            dpg.add_input_text(label="Gender", tag="update_gender")
+            dpg.add_input_float(label="Height", tag="update_height", format="%.2f")  # Limita para 2 casas decimais
+            dpg.add_input_float(label="Weight", tag="update_weight", format="%.2f")  # Limita para 2 casas decimais
+            dpg.add_input_text(label="Birth Date (dd/mm/yyyy)", tag="birth_date")
+            dpg.add_input_text(label="Birth Place", tag="update_birth_place")
+            dpg.add_input_text(label="Powers", tag="update_powers")
+            dpg.add_input_int(label="Strength Level (0-100)", tag="update_strength_level")
+            dpg.add_input_int(label="Popularity (0-100)", tag="update_popularity")
+            dpg.add_input_text(label="Status", tag="update_status")
+            dpg.add_input_text(label="Battle History", tag="update_battle_history")
+            dpg.add_button(label="Update Hero", callback=update_hero_callback)
+
+# Função para carregar herói do banco de dados pelo ID
+def get_hero_by_id(hero_id):
+    conn = sqlite3.connect('heroes.db')
+    cursor = conn.cursor()
     
-    data = (
-        real_name_entry_update.get(), hero_name_entry_update.get(), gender_entry_update.get(),
-        float(height_entry_update.get()), float(weight_entry_update.get()),
-        birth_date_entry_update.get(), birth_place_entry_update.get(), powers_entry_update.get(),
-        int(strength_level_entry_update.get()), int(popularity_entry_update.get()),
-        status_entry_update.get(), battle_history_entry_update.get()
-    )
+    # Buscar herói pelo ID
+    cursor.execute("SELECT * FROM heroes WHERE id = ?", (hero_id,))
+    hero = cursor.fetchone()
     
-    database.update_hero(hero_id, data)
-    messagebox.showinfo("Sucesso", "Herói atualizado com sucesso!")
-    clear_update_entries()
+    conn.close()
+    return hero
 
-def search_hero():
-    name = search_name_entry.get()
-    status = search_status_entry.get()
-    popularity = search_popularity_entry.get()
-    popularity = int(popularity) if popularity else None
+def remove_hero_callback(sender, app_data, user_data):
+    hero_id = dpg.get_value("remove_hero_id")
+    remove_hero_by_id(hero_id)
+    dpg.delete_item("remove_hero_window")
+
+
+def open_remove_hero_window():
+    if dpg.does_item_exist("remove_hero_window"):
+        dpg.focus_item("remove_hero_window")
+    else:
+        with dpg.window(label="Remove Hero", modal=True, tag="remove_hero_window"):
+            dpg.add_input_int(label="Hero ID", tag="remove_hero_id")
+            dpg.add_button(label="Remove Hero", callback=remove_hero_callback)
+
+def remove_hero_by_id(hero_id):
+    conn = sqlite3.connect('heroes.db')
+    cursor = conn.cursor()
+
+    # Apagar herói pelo ID
+    cursor.execute("DELETE FROM heroes WHERE id = ?", (hero_id,))
+    conn.commit()
+    conn.close()
+
+
+def add_hero_callback(sender, app_data, user_data):
+    hero_data = [
+        dpg.get_value("real_name"), dpg.get_value("hero_name"), dpg.get_value("gender"),
+        dpg.get_value("height"), dpg.get_value("weight"), dpg.get_value("birth_date"),
+        dpg.get_value("birth_place"), dpg.get_value("powers"), dpg.get_value("strength_level"),
+        dpg.get_value("popularity"), "Ativo", dpg.get_value("battle_history")
+    ]
+    add_hero(hero_data)
+    dpg.delete_item("add_hero_window")
+
+def open_add_hero_window():
+    if dpg.does_item_exist("add_hero_window"):
+        dpg.focus_item("add_hero_window")
+    else:
+        with dpg.window(label="Add Hero", modal=True, tag="add_hero_window"):
+            dpg.add_input_text(label="Real Name", tag="real_name")
+            dpg.add_input_text(label="Hero Name", tag="hero_name")
+            dpg.add_input_text(label="Gender", tag="gender")
+            dpg.add_input_float(label="Height", tag="height", format="%.2f")  # Limita para 2 casas decimais
+            dpg.add_input_float(label="Weight", tag="weight", format="%.2f")  # Limita para 2 casas decimais
+            dpg.add_input_text(label="Birth Date (dd/mm/yyyy)", tag="birth_date")
+            dpg.add_input_text(label="Birth Place", tag="birth_place")
+            dpg.add_input_text(label="Powers", tag="powers")
+            dpg.add_input_int(label="Strength Level (0-100)", tag="strength_level")
+            dpg.add_input_int(label="Popularity (0-100)", tag="popularity")
+            dpg.add_input_text(label="Battle History", tag="battle_history")
+            dpg.add_button(label="Add Hero", callback=add_hero_callback)
+
+def search_hero_callback(sender, app_data, user_data):
+    name = dpg.get_value("search_name")
+    results = search_heroes(name=name)
     
-    results = database.search_heroes(name=name, status=status, popularity=popularity)
-    display_results(results)
+    if dpg.does_item_exist("search_results"):
+        dpg.delete_item("search_results", children_only=True)
+    
+    with dpg.group(parent="search_results"):
+        for hero in results:
+            dpg.add_text(f"Hero: {hero[2]}, Popularity: {hero[10]}, Status: {hero[11]}")
 
-def display_results(results):
-    for widget in results_frame.winfo_children():
-        widget.destroy()
-    for hero in results:
-        result_label = tk.Label(results_frame, text=str(hero), font=("Arial", 12), fg="#fff", bg="#2f2f2f")
-        result_label.pack()
+def open_search_window():
+    if dpg.does_item_exist("search_hero_window"):
+        dpg.focus_item("search_hero_window")
+    else:
+        with dpg.window(label="Search Hero", modal=True, tag="search_hero_window"):
+            dpg.add_input_text(label="Hero Name", tag="search_name")
+            dpg.add_button(label="Search", callback=search_hero_callback)
+            with dpg.group(tag="search_results"):
+                pass
 
-# Funções de limpeza
-def clear_entries():
-    for entry in [real_name_entry, hero_name_entry, gender_entry, height_entry, 
-                  weight_entry, birth_date_entry, birth_place_entry, powers_entry, 
-                  strength_level_entry, popularity_entry, status_entry, battle_history_entry]:
-        entry.delete(0, tk.END)
+def create_main_window():
+    dpg.create_context()
+    setup_theme()
+    add_background_image()
 
-def clear_update_entries():
-    for entry in [id_entry_update, real_name_entry_update, hero_name_entry_update, gender_entry_update, 
-                  height_entry_update, weight_entry_update, birth_date_entry_update, birth_place_entry_update, 
-                  powers_entry_update, strength_level_entry_update, popularity_entry_update, 
-                  status_entry_update, battle_history_entry_update]:
-        entry.delete(0, tk.END)
-
-# Configuração da janela principal
-root = tk.Tk()
-root.title("Banco de Dados de Heróis")
-root.geometry("600x700")
-root.config(bg="#1c1c1c")
-
-# Botões principais para acessar funções
-main_button_frame = tk.Frame(root, bg="#333")
-main_button_frame.pack(fill="x", pady=10)
-
-add_button = tk.Button(main_button_frame, text="Adicionar Herói", command=show_add_hero, font=("Arial", 14), bg="#555", fg="white")
-add_button.pack(side="left", padx=10)
-
-remove_button = tk.Button(main_button_frame, text="Remover Herói", command=show_remove_hero, font=("Arial", 14), bg="#555", fg="white")
-remove_button.pack(side="left", padx=10)
-
-update_button = tk.Button(main_button_frame, text="Atualizar Herói", command=show_update_hero, font=("Arial", 14), bg="#555", fg="white")
-update_button.pack(side="left", padx=10)
-
-search_button = tk.Button(main_button_frame, text="Pesquisar Heróis", command=show_search_hero, font=("Arial", 14), bg="#555", fg="white")
-search_button.pack(side="left", padx=10)
-
-# Frames das telas
-add_frame = tk.Frame(root, bg="#1c1c1c")
-remove_frame = tk.Frame(root, bg="#1c1c1c")
-update_frame = tk.Frame(root, bg="#1c1c1c")
-search_frame = tk.Frame(root, bg="#1c1c1c")
-
-# Adicionar campos de entrada para "Adicionar Herói"
-real_name_label = tk.Label(add_frame, text="Nome Real:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-real_name_label.pack()
-real_name_entry = tk.Entry(add_frame, font=("Arial", 12))
-real_name_entry.pack()
-
-hero_name_label = tk.Label(add_frame, text="Nome do Herói:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-hero_name_label.pack()
-hero_name_entry = tk.Entry(add_frame, font=("Arial", 12))
-hero_name_entry.pack()
-
-gender_label = tk.Label(add_frame, text="Sexo:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-gender_label.pack()
-gender_entry = tk.Entry(add_frame, font=("Arial", 12))
-gender_entry.pack()
-
-height_label = tk.Label(add_frame, text="Altura:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-height_label.pack()
-height_entry = tk.Entry(add_frame, font=("Arial", 12))
-height_entry.pack()
-
-weight_label = tk.Label(add_frame, text="Peso:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-weight_label.pack()
-weight_entry = tk.Entry(add_frame, font=("Arial", 12))
-weight_entry.pack()
-
-birth_date_label = tk.Label(add_frame, text="Data de Nascimento:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-birth_date_label.pack()
-birth_date_entry = tk.Entry(add_frame, font=("Arial", 12))
-birth_date_entry.pack()
-
-birth_place_label = tk.Label(add_frame, text="Local de Nascimento:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-birth_place_label.pack()
-birth_place_entry = tk.Entry(add_frame, font=("Arial", 12))
-birth_place_entry.pack()
-
-powers_label = tk.Label(add_frame, text="Poderes:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-powers_label.pack()
-powers_entry = tk.Entry(add_frame, font=("Arial", 12))
-powers_entry.pack()
-
-strength_level_label = tk.Label(add_frame, text="Nível de Força:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-strength_level_label.pack()
-strength_level_entry = tk.Entry(add_frame, font=("Arial", 12))
-strength_level_entry.pack()
-
-popularity_label = tk.Label(add_frame, text="Popularidade:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-popularity_label.pack()
-popularity_entry = tk.Entry(add_frame, font=("Arial", 12))
-popularity_entry.pack()
-
-status_label = tk.Label(add_frame, text="Status:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-status_label.pack()
-status_entry = tk.Entry(add_frame, font=("Arial", 12))
-status_entry.pack()
-
-battle_history_label = tk.Label(add_frame, text="Histórico de Batalhas:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-battle_history_label.pack()
-battle_history_entry = tk.Entry(add_frame, font=("Arial", 12))
-battle_history_entry.pack()
-
-# Botão de Adicionar
-add_button_frame = tk.Frame(add_frame, bg="#1c1c1c")
-add_button_frame.pack(pady=10)
-add_button = tk.Button(add_button_frame, text="Adicionar Herói", command=add_hero, font=("Arial", 12), bg="#007bff", fg="white")
-add_button.pack()
-
-# Remover Herói
-id_label_remove = tk.Label(remove_frame, text="ID do Herói para Remover:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-id_label_remove.pack()
-id_entry = tk.Entry(remove_frame, font=("Arial", 12))
-id_entry.pack()
-
-remove_button_frame = tk.Frame(remove_frame, bg="#1c1c1c")
-remove_button_frame.pack(pady=10)
-remove_button = tk.Button(remove_button_frame, text="Remover Herói", command=remove_hero, font=("Arial", 12), bg="#FF0000", fg="white")
-remove_button.pack()
-
-# Atualizar Herói
-id_label_update = tk.Label(update_frame, text="ID do Herói para Atualizar:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-id_label_update.pack()
-id_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-id_entry_update.pack()
-
-# Campos para editar os dados do herói
-real_name_label_update = tk.Label(update_frame, text="Nome Real:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-real_name_label_update.pack()
-real_name_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-real_name_entry_update.pack()
-
-hero_name_label_update = tk.Label(update_frame, text="Nome do Herói:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-hero_name_label_update.pack()
-hero_name_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-hero_name_entry_update.pack()
-
-gender_label_update = tk.Label(update_frame, text="Sexo:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-gender_label_update.pack()
-gender_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-gender_entry_update.pack()
-
-height_label_update = tk.Label(update_frame, text="Altura:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-height_label_update.pack()
-height_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-height_entry_update.pack()
-
-weight_label_update = tk.Label(update_frame, text="Peso:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-weight_label_update.pack()
-weight_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-weight_entry_update.pack()
-
-birth_date_label_update = tk.Label(update_frame, text="Data de Nascimento:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-birth_date_label_update.pack()
-birth_date_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-birth_date_entry_update.pack()
-
-birth_place_label_update = tk.Label(update_frame, text="Local de Nascimento:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-birth_place_label_update.pack()
-birth_place_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-birth_place_entry_update.pack()
-
-powers_label_update = tk.Label(update_frame, text="Poderes:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-powers_label_update.pack()
-powers_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-powers_entry_update.pack()
-
-strength_level_label_update = tk.Label(update_frame, text="Nível de Força:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-strength_level_label_update.pack()
-strength_level_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-strength_level_entry_update.pack()
-
-popularity_label_update = tk.Label(update_frame, text="Popularidade:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-popularity_label_update.pack()
-popularity_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-popularity_entry_update.pack()
-
-status_label_update = tk.Label(update_frame, text="Status:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-status_label_update.pack()
-status_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-status_entry_update.pack()
-
-battle_history_label_update = tk.Label(update_frame, text="Histórico de Batalhas:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-battle_history_label_update.pack()
-battle_history_entry_update = tk.Entry(update_frame, font=("Arial", 12))
-battle_history_entry_update.pack()
-
-# Botão para carregar herói para atualização
-load_button_frame = tk.Frame(update_frame, bg="#1c1c1c")
-load_button_frame.pack(pady=10)
-load_button = tk.Button(load_button_frame, text="Carregar Herói", command=load_hero_for_update, font=("Arial", 12), bg="#FF6600", fg="white")
-load_button.pack()
-
-# Botão para atualizar herói
-update_button_frame = tk.Frame(update_frame, bg="#1c1c1c")
-update_button_frame.pack(pady=10)
-update_button = tk.Button(update_button_frame, text="Atualizar Herói", command=update_hero, font=("Arial", 12), bg="#FF0000", fg="white")
-update_button.pack()
-
-# Pesquisar Herói
-search_name_label = tk.Label(search_frame, text="Nome do Herói:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-search_name_label.pack()
-search_name_entry = tk.Entry(search_frame, font=("Arial", 12))
-search_name_entry.pack()
-
-search_status_label = tk.Label(search_frame, text="Status do Herói:", font=("Arial", 12), fg="white", bg="#1c1c1c")
-search_status_label.pack()
-search_status_entry = tk.Entry(search_frame, font=("Arial", 12))
-search_status_entry.pack()
-
-search_popularity_label = tk.Label(search_frame, text="Popularidade (número):", font=("Arial", 12), fg="white", bg="#1c1c1c")
-search_popularity_label.pack()
-search_popularity_entry = tk.Entry(search_frame, font=("Arial", 12))
-search_popularity_entry.pack()
-
-search_button_frame = tk.Frame(search_frame, bg="#1c1c1c")
-search_button_frame.pack(pady=10)
-search_button = tk.Button(search_button_frame, text="Pesquisar Herói", command=search_hero, font=("Arial", 12), bg="#007bff", fg="white")
-search_button.pack()
-
-# Frame para exibir resultados de pesquisa
-results_frame = tk.Frame(search_frame, bg="#1c1c1c")
-results_frame.pack(pady=20)
-
-
-root.mainloop()
+create_main_window()
+dpg.create_viewport(title="Hero Database - The Boys", width=1000, height=700)
+dpg.setup_dearpygui()
+dpg.show_viewport()
+dpg.start_dearpygui()
+dpg.destroy_context()

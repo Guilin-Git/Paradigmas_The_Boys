@@ -68,7 +68,6 @@ def update_hero(hero_id, updated_data):
         birth_place = ?, powers = ?, strength_level = ?, popularity = ?, status = ?, battle_history = ?
     WHERE id = ?
     ''', (*updated_data, hero_id))
-    
     conn.commit()
     conn.close()
 
@@ -94,6 +93,15 @@ def search_heroes(name=None, status=None, popularity=None):
     conn.close()
     return results
 
-# Inicializa o banco de dados e o trigger
+# Função para obter um herói por ID
+def get_hero_by_id(hero_id):
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM heroes WHERE id = ?', (hero_id,))
+    hero = cursor.fetchone()
+    conn.close()
+    return hero
+
+# Initialize the database and trigger
 create_table()
 create_trigger()
