@@ -56,8 +56,34 @@ def create_trigger():
         UPDATE heroes SET status = 'Banido' WHERE id = NEW.id;
     END;
     ''')
+    cursor.execute('''
+        CREATE TRIGGER IF NOT EXISTS update_hero_status
+        AFTER UPDATE OF popularity ON heroes
+        FOR EACH ROW
+        WHEN NEW.popularity < 20 AND NEW.status != 'Banido'
+        BEGIN
+            UPDATE heroes SET status = 'Banido' WHERE id = NEW.id;
+        END;
+        ''')
     conn.commit()
     conn.close()
+
+def create_missions_table():
+        conn = create_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS missions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            mission_name TEXT,
+            mission_description TEXT,
+            difficulty_level INTEGER CHECK(difficulty_level BETWEEN 1 AND 10),
+            heroes_assigned TEXT,
+            result TEXT CHECK(result IN ('Sucesso', 'Fracasso')),
+            reward INTEGER
+        );
+        ''')
+        conn.commit()
+        conn.close()
 
 def add_hero(hero_data):
     conn = create_connection()
@@ -67,6 +93,30 @@ def add_hero(hero_data):
                         birth_place, powers, strength_level, popularity, status, battle_history)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', hero_data)
+    conn.commit()
+    conn.close()
+
+
+def add_mission(mission_data, hero_id):
+    """
+    Adiciona uma missão à tabela de missões e associa o herói à missão.
+    :param mission_data: Dados da missão em forma de tupla (mission_name, mission_description, difficulty_level, result, reward)
+    :param hero_id: ID do herói designado para a missão
+    """
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('''
+    INSERT INTO missions (mission_name, mission_description, difficulty_level, result, reward)
+    VALUES (?, ?, ?, ?, ?)
+    ''', mission_data)
+
+    # Atualizar a popularidade do herói apenas se necessário
+    if mission_data[3] == "Sucesso":
+        cursor.execute('''
+        UPDATE heroes SET popularity = popularity + ? WHERE id = ?
+        ''', (mission_data[4], hero_id))
+
     conn.commit()
     conn.close()
 
@@ -152,3 +202,4 @@ def get_hero_by_id(hero_id):
 create_table()
 create_crimes_table()
 create_trigger()
+create_missions_table()
