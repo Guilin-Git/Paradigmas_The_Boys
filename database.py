@@ -27,22 +27,21 @@ def create_table():
     conn.close()
 
 def create_crimes_table():
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS crimes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        crime_name TEXT,
-        crime_description TEXT,
-        hero_id INTEGER,
-        crime_date TEXT,
-        hero_name TEXT,
-        crime_severity INTEGER,
-        FOREIGN KEY (hero_id) REFERENCES heroes(id)
-    )
-    ''')
-    conn.commit()
-    conn.close()
+        conn = create_connection()
+        cursor = conn.cursor()
+        # Define the updated structure without hero_id and hero_name
+        cursor.execute('DROP TABLE IF EXISTS crimes')
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS crimes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            crime_name TEXT,
+            crime_description TEXT,
+            crime_date TEXT,
+            crime_severity INTEGER
+        )
+        ''')
+        conn.commit()
+        conn.close()
 
 def create_trigger():
     conn = create_connection()
@@ -69,21 +68,22 @@ def create_trigger():
     conn.close()
 
 def create_missions_table():
-        conn = create_connection()
-        cursor = conn.cursor()
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS missions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            mission_name TEXT,
-            mission_description TEXT,
-            difficulty_level INTEGER CHECK(difficulty_level BETWEEN 1 AND 10),
-            heroes_assigned TEXT,
-            result TEXT CHECK(result IN ('Sucesso', 'Fracasso')),
-            reward INTEGER
-        );
-        ''')
-        conn.commit()
-        conn.close()
+    conn = create_connection()
+    cursor = conn.cursor()
+    # Define the updated structure without hero_id and hero_name
+    cursor.execute('DROP TABLE IF EXISTS missions')
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS missions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        mission_name TEXT,
+        mission_description TEXT,
+        difficulty_level INTEGER CHECK(difficulty_level BETWEEN 1 AND 10),
+        result TEXT CHECK(result IN ('Sucesso', 'Fracasso')),
+        reward INTEGER
+    )
+    ''')
+    conn.commit()
+    conn.close()
 
 def add_hero(hero_data):
     conn = create_connection()

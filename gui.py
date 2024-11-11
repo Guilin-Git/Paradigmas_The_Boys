@@ -4,6 +4,8 @@ import os
 import sqlite3
 import random
 
+def create_connection():
+    return sqlite3.connect('heroes.db')
 
 # Função para rolar o dado
 def roll_dice():
@@ -162,8 +164,6 @@ def open_add_crime_window():
         dpg.focus_item("add_crime_window")
     else:
         with dpg.window(label="Add Crime", modal=True, tag="add_crime_window"):
-            dpg.add_input_int(label="Hero ID", tag="crime_hero_id")
-            dpg.add_input_text(label="Hero Name", tag="crime_hero_name")
             dpg.add_input_text(label="Crime Name", tag="crime_name")
             dpg.add_input_text(label="Crime Description", tag="crime_description")
             dpg.add_input_text(label="Crime Date (dd/mm/yyyy)", tag="crime_date")
@@ -213,6 +213,8 @@ def add_background_image():
             dpg.add_button(label="Cometer Crime", callback=commit_crime_callback)
             dpg.add_button(label="Add Mission", callback=open_add_mission_window)
             dpg.add_button(label="Complete Mission", callback=complete_mission_callback)
+            dpg.add_button(label="Cometer Crime", callback=lambda: open_commit_crime_hero_selection(crime_id="example_id"))
+            dpg.add_button(label="Completar Missão", callback=lambda: open_complete_mission_hero_selection(mission_id="example_id"))
 
             # Adicione o status_text dentro da janela principal
             dpg.add_text("", tag="status_text")
@@ -296,6 +298,54 @@ add_background_image()
 
 # Exibir status de operações
 """dpg.add_text("", tag="status_text")"""
+
+def fetch_heroes():
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, hero_name FROM heroes")
+    heroes = cursor.fetchall()
+    conn.close()
+    return heroes
+
+# Function to open hero selection for committing a crime
+def open_commit_crime_hero_selection(crime_id):
+    if dpg.does_item_exist("commit_crime_window"):
+        dpg.focus_item("commit_crime_window")
+    else:
+        with dpg.window(label="Select Hero for Crime", modal=True, tag="commit_crime_window"):
+            dpg.add_text("Select a Hero to commit this crime:")
+            heroes = fetch_heroes()
+            for hero_id, hero_name in heroes:
+                dpg.add_button(label=hero_name, callback=lambda s, a, u=hero_id: commit_crime(crime_id, u))
+            dpg.add_button(label="Cancel", callback=lambda: dpg.delete_item("commit_crime_window"))
+
+# Function to open hero selection for completing a mission
+def open_complete_mission_hero_selection(mission_id):
+    if dpg.does_item_exist("complete_mission_window"):
+        dpg.focus_item("complete_mission_window")
+    else:
+        with dpg.window(label="Select Hero for Mission", modal=True, tag="complete_mission_window"):
+            dpg.add_text("Select a Hero to complete this mission:")
+            heroes = fetch_heroes()
+            for hero_id, hero_name in heroes:
+                dpg.add_button(label=hero_name, callback=lambda s, a, u=hero_id: complete_mission(mission_id, u))
+            dpg.add_button(label="Cancel", callback=lambda: dpg.delete_item("complete_mission_window"))
+
+# Updated callback for committing a crime
+def commit_crime(crime_id, hero_id):
+    dice_roll = roll_dice()  # Use the dice to determine the penalty
+    update_hero(hero_id, {"popularity": -dice_roll})  # Apply penalty to the hero's popularity
+    dpg.set_value("status_text", f"Crime committed! Hero's popularity reduced by {dice_roll} points.")
+    dpg.delete_item("commit_crime_window")
+
+# Updated callback for completing a mission
+def complete_mission(mission_id, hero_id):
+    dice_roll = roll_dice()  # Use the dice to determine the reward
+    update_hero(hero_id, {"popularity": dice_roll})  # Apply reward to the hero's popularity
+    dpg.set_value("status_text", f"Mission completed! Hero's popularity increased by {dice_roll} points.")
+    dpg.delete_item("complete_mission_window")
+
+# Replace `commit_crime_callback` and `complete_mission_callback` with new hero selection windows
 
 # Iniciar a interface
 dpg.create_viewport(title="Hero Database - The Boys", width=1000, height=700)
