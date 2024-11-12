@@ -25,9 +25,9 @@ def setup_theme():
 
 def open_add_hero_window():
     if dpg.does_item_exist("add_hero_window"):
-        dpg.focus_item("add_hero_window")
-    else:
-        with dpg.window(label="Add Hero", modal=True, tag="add_hero_window"):
+        dpg.delete_item("add_hero_window")
+
+    with dpg.window(label="Add Hero", modal=True, tag="add_hero_window"):
             dpg.add_input_text(label="Real Name", tag="real_name")
             dpg.add_input_text(label="Hero Name", tag="hero_name")
             dpg.add_input_text(label="Gender", tag="gender")
@@ -67,9 +67,9 @@ def add_hero_callback(sender, app_data, user_data):
 # Função para abrir janela de busca de herói
 def open_search_window():
     if dpg.does_item_exist("search_hero_window"):
-        dpg.focus_item("search_hero_window")
-    else:
-        with dpg.window(label="Search Hero", modal=True, tag="search_hero_window"):
+        dpg.delete_item("search_hero_window")
+
+    with dpg.window(label="Search Hero", modal=True, tag="search_hero_window"):
             dpg.add_input_text(label="Hero Name", tag="search_name")
             dpg.add_button(label="Search", callback=search_hero_callback)
             with dpg.group(tag="search_results"):
@@ -95,9 +95,10 @@ def search_hero_callback(sender, app_data, user_data):
 # Função para abrir janela de atualização de herói
 def open_update_hero_window():
     if dpg.does_item_exist("update_hero_window"):
-        dpg.focus_item("update_hero_window")
-    else:
-        with dpg.window(label="Update Hero", modal=True, tag="update_hero_window"):
+        dpg.delete_item("update_hero_window")
+
+
+    with dpg.window(label="Update Hero", modal=True, tag="update_hero_window"):
             dpg.add_input_int(label="Hero ID", tag="update_hero_id", callback=lambda: load_hero_data(dpg.get_value("update_hero_id")))
             dpg.add_input_text(label="Real Name", tag="update_real_name")
             dpg.add_input_text(label="Hero Name", tag="update_hero_name")
@@ -140,9 +141,9 @@ def update_hero_callback(sender, app_data, user_data):
 
 def open_remove_hero_window():
     if dpg.does_item_exist("remove_hero_window"):
-        dpg.focus_item("remove_hero_window")
-    else:
-        with dpg.window(label="Remove Hero", modal=True, tag="remove_hero_window"):
+        dpg.delete_item("remove_hero_window")
+
+    with dpg.window(label="Remove Hero", modal=True, tag="remove_hero_window"):
             dpg.add_input_int(label="Hero ID", tag="remove_hero_id")
             dpg.add_button(label="Remove Hero", callback=remove_hero_callback)
 
@@ -161,9 +162,9 @@ def remove_hero_callback(sender, app_data, user_data):
 # Função para abrir janela para adicionar crime
 def open_add_crime_window():
     if dpg.does_item_exist("add_crime_window"):
-        dpg.focus_item("add_crime_window")
-    else:
-        with dpg.window(label="Add Crime", modal=True, tag="add_crime_window"):
+        dpg.delete_item("add_crime_window")
+
+    with dpg.window(label="Add Crime", modal=True, tag="add_crime_window"):
             dpg.add_input_text(label="Crime Name", tag="crime_name")
             dpg.add_input_text(label="Crime Description", tag="crime_description")
             dpg.add_input_text(label="Crime Date (dd/mm/yyyy)", tag="crime_date")
@@ -310,9 +311,9 @@ def fetch_heroes():
 # Function to open hero selection for committing a crime
 def open_commit_crime_hero_selection(crime_id):
     if dpg.does_item_exist("commit_crime_window"):
-        dpg.focus_item("commit_crime_window")
-    else:
-        with dpg.window(label="Select Hero for Crime", modal=True, tag="commit_crime_window"):
+        dpg.delete_item("commit_crime_window")
+
+    with dpg.window(label="Select Hero for Crime", modal=True, tag="commit_crime_window"):
             dpg.add_text("Select a Hero to commit this crime:")
             heroes = fetch_heroes()
             for hero_id, hero_name in heroes:
@@ -322,9 +323,8 @@ def open_commit_crime_hero_selection(crime_id):
 # Function to open hero selection for completing a mission
 def open_complete_mission_hero_selection(mission_id):
     if dpg.does_item_exist("complete_mission_window"):
-        dpg.focus_item("complete_mission_window")
-    else:
-        with dpg.window(label="Select Hero for Mission", modal=True, tag="complete_mission_window"):
+        dpg.delete_item("complete_mission_window")
+    with dpg.window(label="Select Hero for Mission", modal=True, tag="complete_mission_window"):
             dpg.add_text("Select a Hero to complete this mission:")
             heroes = fetch_heroes()
             for hero_id, hero_name in heroes:
