@@ -210,9 +210,9 @@ def add_background_image():
             dpg.add_button(label="Update Hero", callback=open_update_hero_window)
             dpg.add_button(label="Remove Hero", callback=open_remove_hero_window)
             dpg.add_button(label="Add Crime", callback=open_add_crime_window)
-            dpg.add_button(label="Cometer Crime", callback=commit_crime_callback)
+            """dpg.add_button(label="Cometer Crime", callback=commit_crime_callback)"""
             dpg.add_button(label="Add Mission", callback=open_add_mission_window)
-            dpg.add_button(label="Complete Mission", callback=complete_mission_callback)
+            """dpg.add_button(label="Complete Mission", callback=complete_mission_callback)"""
             dpg.add_button(label="Cometer Crime", callback=lambda: open_commit_crime_hero_selection(crime_id="example_id"))
             dpg.add_button(label="Completar Missão", callback=lambda: open_complete_mission_hero_selection(mission_id="example_id"))
 
@@ -235,12 +235,12 @@ def submit_crime_callback(sender, app_data, user_data):
 
 
 # Função para cometer um crime e aplicar penalidade
-def commit_crime_callback(sender, app_data, user_data):
-    hero_id = dpg.get_value("hero_id_crime")
+#def commit_crime_callback(sender, app_data, user_data):
+""" hero_id = dpg.get_value("hero_id_crime")
     dice_roll = roll_dice()
     update_hero(hero_id, {"popularity": dice_roll * -1})
     dpg.set_value("status_text", f"Crime cometido! Popularidade do herói reduzida em {dice_roll} pontos.")
-
+"""
 
 # Função para adicionar uma missão
 def submit_mission_callback(sender, app_data, user_data):
@@ -256,11 +256,11 @@ def submit_mission_callback(sender, app_data, user_data):
 
 # Função para completar uma missão e aplicar recompensa
 # Função para completar uma missão e aplicar recompensa
-def complete_mission_callback(sender, app_data, user_data):
+"""def complete_mission_callback(sender, app_data, user_data):
     hero_id = dpg.get_value("hero_id_mission")
     dice_roll = roll_dice()
     update_hero(hero_id, {"popularity": dice_roll})
-    dpg.set_value("status_text", f"Missão completada! Popularidade do herói aumentada em {dice_roll} pontos.")
+    dpg.set_value("status_text", f"Missão completada! Popularidade do herói aumentada em {dice_roll} pontos.")"""
 
 # Função para carregar os dados do herói para atualização
 def load_hero_data(hero_id):
