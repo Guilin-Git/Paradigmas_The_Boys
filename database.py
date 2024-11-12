@@ -97,7 +97,7 @@ def add_hero(hero_data):
     conn.close()
 
 
-def add_mission(mission_data, hero_id):
+def add_mission(mission_data):
     """
     Adiciona uma missão à tabela de missões e associa o herói à missão.
     :param mission_data: Dados da missão em forma de tupla (mission_name, mission_description, difficulty_level, result, reward)
@@ -115,7 +115,7 @@ def add_mission(mission_data, hero_id):
     if mission_data[3] == "Sucesso":
         cursor.execute('''
         UPDATE heroes SET popularity = popularity + ? WHERE id = ?
-        ''', (mission_data[4], hero_id))
+        ''', (mission_data[4]))
 
     conn.commit()
     conn.close()
@@ -124,7 +124,7 @@ def add_crime(crime_data):
     conn = create_connection()
     cursor = conn.cursor()
     cursor.execute('''
-    INSERT INTO crimes (crime_name, crime_description, hero_id, crime_date, hero_name, crime_severity)
+    INSERT INTO crimes (crime_name, crime_description, crime_date, crime_severity)
     VALUES (?, ?, ?, ?, ?, ?)
     ''', crime_data)
     conn.commit()
