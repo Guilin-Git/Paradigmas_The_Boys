@@ -138,14 +138,21 @@ def remove_hero(hero_id):
     conn.close()
 
 def update_hero(hero_id, updated_data):
+    """
+    Atualiza os campos especificados do herói com base nos dados fornecidos.
+    :param hero_id: ID do herói a ser atualizado
+    :param updated_data: Dicionário com os campos e valores a serem atualizados, ex: {"popularity": 50}
+    """
     conn = create_connection()
     cursor = conn.cursor()
-    cursor.execute('''
-    UPDATE heroes
-    SET real_name = ?, hero_name = ?, gender = ?, height = ?, weight = ?, birth_date = ?,
-        birth_place = ?, powers = ?, strength_level = ?, popularity = ?, status = ?, battle_history = ?
-    WHERE id = ?
-    ''', (*updated_data, hero_id))
+
+    # Construir a query dinamicamente com base nos campos fornecidos
+    fields = ', '.join([f"{key} = ?" for key in updated_data.keys()])
+    values = list(updated_data.values())
+    values.append(hero_id)
+
+    query = f"UPDATE heroes SET {fields} WHERE id = ?"
+    cursor.execute(query, values)
     conn.commit()
     conn.close()
 
