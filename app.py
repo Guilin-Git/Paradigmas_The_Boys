@@ -38,6 +38,35 @@ def add_hero():
     conn.close()
     return jsonify({'message': 'Hero added successfully'}), 201
 
+@app.route('/heroes/<int:hero_id>', methods=['DELETE'])
+def delete_hero(hero_id):
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM heroes WHERE id = ?', (hero_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Hero deleted successfully'}), 200
+
+@app.route('/heroes/<int:hero_id>', methods=['PUT'])
+def update_hero(hero_id):
+    data = request.json
+    updated_data = (
+        data['real_name'], data['hero_name'], data['gender'], data['height'], data['weight'],
+        data['birth_date'], data['birth_place'], data['powers'], data['strength_level'],
+        data['popularity'], data['battle_history'], hero_id
+    )
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+    UPDATE heroes
+    SET real_name = ?, hero_name = ?, gender = ?, height = ?, weight = ?, birth_date = ?,
+        birth_place = ?, powers = ?, strength_level = ?, popularity = ?, battle_history = ?
+    WHERE id = ?
+    ''', updated_data)
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Hero updated successfully'}), 200
+    
 @app.route('/crimes', methods=['POST'])
 def add_crime():
     data = request.json
@@ -90,4 +119,58 @@ def search_crimes():
     return jsonify(results)
 
 if __name__ == '__main__':
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    # Create tables if they don't exist
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS heroes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        real_name TEXT NOT NULL,
+        hero_name TEXT NOT NULL,
+        gender TEXT,
+        height REAL,
+        weight REAL,
+        birth_date TEXT,
+        birth_place TEXT,
+        powers TEXT,
+        strength_level INTEGER,
+        popularity INTEGER DEFAULT 0,
+        status TEXT,
+        battle_history TEXT
+    )
+    ''')
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS crimes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        crime_name TEXT NOT NULL,
+        crime_description TEXT,
+        hero_id INTEGER,
+        crime_date TEXT,
+        hero_name TEXT,
+        crime_severity TEXT,
+        FOREIGN KEY (hero_id) REFERENCES heroes (id)
+    )
+    ''')
+    
+    # Create trigger to update hero popularity
+    cursor.execute('''
+    CREATE TRIGGER IF NOT EXISTS update_hero_popularity
+    AFTER INSERT ON crimes
+    FOR EACH ROW
+    BEGIN
+        UPDATE heroes
+        SET popularity = CASE
+            WHEN NEW.crime_severity BETWEEN 0 AND 50 THEN 20
+            WHEN NEW.crime_severity BETWEEN 51 AND 100 THEN 40
+            ELSE 0
+        END
+        WHERE id = NEW.hero_id;
+    END;
+    ''')
+    
+    conn.commit()
+    conn.close()
+    
     app.run(debug=True)
