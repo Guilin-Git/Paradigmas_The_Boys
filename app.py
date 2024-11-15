@@ -15,6 +15,10 @@ def serve_HomePage():
 def serve_index():
     return send_from_directory('', 'heroes.html')
 
+@app.route('/missao.html')
+def serve_missions():
+    return send_from_directory('', 'missao.html')
+
 @app.route('/crimes.html')
 def serve_crimes():
     return send_from_directory('', 'crimes.html')
@@ -117,6 +121,66 @@ def search_crimes():
     results = cursor.fetchall()
     conn.close()
     return jsonify(results)
+
+@app.route('/missions', methods=['POST'])
+def add_mission():
+    data = request.json
+    mission_data = (
+        data['mission_name'], data['description'], data['difficulty_level'],
+        data['result'], data['rewards']
+    )
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+    INSERT INTO missions (mission_name, description, difficulty_level, result, rewards)
+    VALUES (?, ?, ?, ?, ?)
+    ''', mission_data)
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Mission added successfully'}), 201
+
+@app.route('/missions', methods=['GET'])
+def search_missions():
+    name = request.args.get('name')
+    conn = create_connection()
+    cursor = conn.cursor()
+    query = "SELECT * FROM missions WHERE 1=1"
+    params = []
+    if name:
+        query += " AND mission_name LIKE ?"
+        params.append(f"%{name}%")
+    cursor.execute(query, params)
+    results = cursor.fetchall()
+    conn.close()
+    return jsonify(results)
+
+@app.route('/missions/<int:mission_id>', methods=['PUT'])
+def update_mission(mission_id):
+    data = request.json
+    updated_data = (
+        data['mission_name'], data['description'], data['difficulty_level'],
+        data['result'], data['rewards'], mission_id
+    )
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+    UPDATE missions
+    SET mission_name = ?, description = ?, difficulty_level = ?, result = ?, rewards = ?
+    WHERE id = ?
+    ''', updated_data)
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Mission updated successfully'}), 200
+
+@app.route('/missions/<int:mission_id>', methods=['DELETE'])
+def delete_mission(mission_id):
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM missions WHERE id = ?', (mission_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Mission deleted successfully'}), 200
+
 
 if __name__ == '__main__':
     conn = create_connection()

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missões - The Boys</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1c1c1c;
+            color: #fff;
+            text-align: center;
+        }
+        .container {
+            margin: 20px;
+        }
+        input, button {
+            margin: 5px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #960000;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #c80000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mission Management System</h1>
+        <div>
+            <h2>Add Mission</h2>
+            <input type="text" id="mission_name" placeholder="Mission Name">
+            <input type="text" id="description" placeholder="Description">
+            <input type="number" id="difficulty_level" placeholder="Difficulty Level (0-100)">
+            <input type="text" id="result" placeholder="Result">
+            <input type="text" id="rewards" placeholder="Rewards">
+            <button onclick="addMission()">Add Mission</button>
+        </div>
+        <div>
+            <h2>Search Missions</h2>
+            <input type="text" id="search_mission_name" placeholder="Mission Name">
+            <button onclick="searchMissions()">Search</button>
+            <div id="mission_results"></div>
+        </div>
+        <div>
+            <h2>Update Mission</h2>
+            <input type="number" id="update_mission_id" placeholder="Mission ID">
+            <input type="text" id="update_mission_name" placeholder="Mission Name">
+            <input type="text" id="update_description" placeholder="Description">
+            <input type="number" id="update_difficulty_level" placeholder="Difficulty Level (0-100)">
+            <input type="text" id="update_result" placeholder="Result">
+            <input type="text" id="update_rewards" placeholder="Rewards">
+            <button onclick="updateMission()">Update Mission</button>
+        </div>
+        <div>
+            <h2>Delete Mission</h2>
+            <input type="number" id="delete_mission_id" placeholder="Mission ID">
+            <button onclick="deleteMission()">Delete Mission</button>
+        </div>
+        <div>
+            <button onclick="goBack()">Back to Home</button>
+        </div>
+    </div>
+    <script>
+        async function addMission() {
+            const mission = {
+                mission_name: document.getElementById('mission_name').value,
+                description: document.getElementById('description').value,
+                difficulty_level: document.getElementById('difficulty_level').value,
+                result: document.getElementById('result').value,
+                rewards: document.getElementById('rewards').value
+            };
+            const response = await fetch('/missions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(mission)
+            });
+            const result = await response.json();
+            alert(result.message);
+        }
+
+        async function searchMissions() {
+            const name = document.getElementById('search_mission_name').value;
+            const response = await fetch(`/missions?name=${name}`);
+            const missions = await response.json();
+            const resultsDiv = document.getElementById('mission_results');
+            resultsDiv.innerHTML = '';
+            missions.forEach(mission => {
+                const missionDiv = document.createElement('div');
+                missionDiv.textContent = `Mission: ${mission[1]}, Difficulty: ${mission[3]}, Result: ${mission[4]}`;
+                resultsDiv.appendChild(missionDiv);
+            });
+        }
+
+        async function updateMission() {
+            const mission_id = document.getElementById('update_mission_id').value;
+            const mission = {
+                mission_name: document.getElementById('update_mission_name').value,
+                description: document.getElementById('update_description').value,
+                difficulty_level: document.getElementById('update_difficulty_level').value,
+                result: document.getElementById('update_result').value,
+                rewards: document.getElementById('update_rewards').value
+            };
+            const response = await fetch(`/missions/${mission_id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(mission)
+            });
+            const result = await response.json();
+            alert(result.message);
+        }
+
+        async function deleteMission() {
+            const mission_id = document.getElementById('delete_mission_id').value;
+            const response = await fetch(`/missions/${mission_id}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+            alert(result.message);
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>
