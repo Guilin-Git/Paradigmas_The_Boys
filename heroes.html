@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hero - The Boys</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1c1c1c;
+            color: #fff;
+            text-align: center;
+        }
+        .container {
+            margin: 20px;
+        }
+        input, button {
+            margin: 5px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #960000;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #c80000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hero Management System</h1>
+        <div>
+            <h2>Add Hero</h2>
+            <input type="text" id="real_name" placeholder="Real Name">
+            <input type="text" id="hero_name" placeholder="Hero Name">
+            <input type="text" id="gender" placeholder="Gender">
+            <input type="number" id="height" placeholder="Height">
+            <input type="number" id="weight" placeholder="Weight">
+            <input type="text" id="birth_date" placeholder="Birth Date (dd/mm/yyyy)">
+            <input type="text" id="birth_place" placeholder="Birth Place">
+            <input type="text" id="powers" placeholder="Powers">
+            <input type="number" id="strength_level" placeholder="Strength Level (0-100)">
+            <input type="number" id="popularity" placeholder="Popularity (0-100)">
+            <input type="text" id="battle_history" placeholder="Battle History">
+            <button onclick="addHero()">Add Hero</button>
+        </div>
+        <div>
+            <h2>Search Heroes</h2>
+            <input type="text" id="search_hero_name" placeholder="Hero Name">
+            <button onclick="searchHeroes()">Search</button>
+            <div id="hero_results"></div>
+        </div>
+        <div>
+            <button onclick="goBack()">Back to Home</button>
+        </div>
+    </div>
+    <script>
+        async function addHero() {
+            const hero = {
+                real_name: document.getElementById('real_name').value,
+                hero_name: document.getElementById('hero_name').value,
+                gender: document.getElementById('gender').value,
+                height: document.getElementById('height').value,
+                weight: document.getElementById('weight').value,
+                birth_date: document.getElementById('birth_date').value,
+                birth_place: document.getElementById('birth_place').value,
+                powers: document.getElementById('powers').value,
+                strength_level: document.getElementById('strength_level').value,
+                popularity: document.getElementById('popularity').value,
+                battle_history: document.getElementById('battle_history').value
+            };
+            const response = await fetch('/heroes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(hero)
+            });
+            const result = await response.json();
+            alert(result.message);
+        }
+
+        async function searchHeroes() {
+            const name = document.getElementById('search_hero_name').value;
+            const response = await fetch(`/heroes?name=${name}`);
+            const heroes = await response.json();
+            const resultsDiv = document.getElementById('hero_results');
+            resultsDiv.innerHTML = '';
+            heroes.forEach(hero => {
+                const heroDiv = document.createElement('div');
+                heroDiv.textContent = `Hero: ${hero[2]}, Popularity: ${hero[10]}, Status: ${hero[11]}`;
+                resultsDiv.appendChild(heroDiv);
+            });
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>
