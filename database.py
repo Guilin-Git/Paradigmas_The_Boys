@@ -27,22 +27,21 @@ def create_table():
     conn.close()
 
 def create_crimes_table():
-    conn = create_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS crimes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        crime_name TEXT,
-        crime_description TEXT,
-        hero_id INTEGER,
-        crime_date TEXT,
-        hero_name TEXT,
-        crime_severity INTEGER,
-        FOREIGN KEY (hero_id) REFERENCES heroes(id)
-    )
-    ''')
-    conn.commit()
-    conn.close()
+        conn = create_connection()
+        cursor = conn.cursor()
+        # Define the updated structure without hero_id and hero_name
+        cursor.execute('DROP TABLE IF EXISTS crimes')
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS crimes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            crime_name TEXT,
+            crime_description TEXT,
+            crime_date TEXT,
+            crime_severity INTEGER
+        )
+        ''')
+        conn.commit()
+        conn.close()
 
 def create_trigger():
     conn = create_connection()
@@ -55,6 +54,33 @@ def create_trigger():
     BEGIN
         UPDATE heroes SET status = 'Banido' WHERE id = NEW.id;
     END;
+    ''')
+    cursor.execute('''
+        CREATE TRIGGER IF NOT EXISTS update_hero_status
+        AFTER UPDATE OF popularity ON heroes
+        FOR EACH ROW
+        WHEN NEW.popularity < 20 AND NEW.status != 'Banido'
+        BEGIN
+            UPDATE heroes SET status = 'Banido' WHERE id = NEW.id;
+        END;
+        ''')
+    conn.commit()
+    conn.close()
+
+def create_missions_table():
+    conn = create_connection()
+    cursor = conn.cursor()
+    # Define the updated structure without hero_id and hero_name
+    cursor.execute('DROP TABLE IF EXISTS missions')
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS missions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        mission_name TEXT,
+        mission_description TEXT,
+        difficulty_level INTEGER CHECK(difficulty_level BETWEEN 1 AND 10),
+        result TEXT CHECK(result IN ('Sucesso', 'Fracasso')),
+        reward INTEGER
+    )
     ''')
     conn.commit()
     conn.close()
@@ -70,11 +96,35 @@ def add_hero(hero_data):
     conn.commit()
     conn.close()
 
+
+def add_mission(mission_data):
+    """
+    Adiciona uma missão à tabela de missões e associa o herói à missão.
+    :param mission_data: Dados da missão em forma de tupla (mission_name, mission_description, difficulty_level, result, reward)
+    :param hero_id: ID do herói designado para a missão
+    """
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('''
+    INSERT INTO missions (mission_name, mission_description, difficulty_level, result, reward)
+    VALUES (?, ?, ?, ?, ?)
+    ''', mission_data)
+
+    # Atualizar a popularidade do herói apenas se necessário
+    if mission_data[3] == "Sucesso":
+        cursor.execute('''
+        UPDATE heroes SET popularity = popularity + ? WHERE id = ?
+        ''', (mission_data[4]))
+
+    conn.commit()
+    conn.close()
+
 def add_crime(crime_data):
     conn = create_connection()
     cursor = conn.cursor()
     cursor.execute('''
-    INSERT INTO crimes (crime_name, crime_description, hero_id, crime_date, hero_name, crime_severity)
+    INSERT INTO crimes (crime_name, crime_description, crime_date, crime_severity)
     VALUES (?, ?, ?, ?, ?, ?)
     ''', crime_data)
     conn.commit()
@@ -88,14 +138,21 @@ def remove_hero(hero_id):
     conn.close()
 
 def update_hero(hero_id, updated_data):
+    """
+    Atualiza os campos especificados do herói com base nos dados fornecidos.
+    :param hero_id: ID do herói a ser atualizado
+    :param updated_data: Dicionário com os campos e valores a serem atualizados, ex: {"popularity": 50}
+    """
     conn = create_connection()
     cursor = conn.cursor()
-    cursor.execute('''
-    UPDATE heroes
-    SET real_name = ?, hero_name = ?, gender = ?, height = ?, weight = ?, birth_date = ?,
-        birth_place = ?, powers = ?, strength_level = ?, popularity = ?, status = ?, battle_history = ?
-    WHERE id = ?
-    ''', (*updated_data, hero_id))
+
+    # Construir a query dinamicamente com base nos campos fornecidos
+    fields = ', '.join([f"{key} = ?" for key in updated_data.keys()])
+    values = list(updated_data.values())
+    values.append(hero_id)
+
+    query = f"UPDATE heroes SET {fields} WHERE id = ?"
+    cursor.execute(query, values)
     conn.commit()
     conn.close()
 
@@ -152,3 +209,4 @@ def get_hero_by_id(hero_id):
 create_table()
 create_crimes_table()
 create_trigger()
+create_missions_table()
