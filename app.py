@@ -149,7 +149,7 @@ if __name__ == '__main__':
         hero_id INTEGER,
         crime_date TEXT,
         hero_name TEXT,
-        crime_severity TEXT,
+        crime_severity INTEGER,
         FOREIGN KEY (hero_id) REFERENCES heroes (id)
     )
     ''')
@@ -160,14 +160,15 @@ if __name__ == '__main__':
     AFTER INSERT ON crimes
     FOR EACH ROW
     BEGIN
-        UPDATE heroes
-        SET popularity = CASE
+    UPDATE heroes
+    SET popularity = 
+        CASE
             WHEN NEW.crime_severity BETWEEN 0 AND 50 THEN 20
             WHEN NEW.crime_severity BETWEEN 51 AND 100 THEN 40
             ELSE 0
         END
-        WHERE id = NEW.hero_id;
-    END;
+    WHERE id = NEW.hero_id;
+    END
     ''')
     
     conn.commit()
