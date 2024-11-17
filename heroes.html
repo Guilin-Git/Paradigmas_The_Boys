@@ -51,6 +51,8 @@
         <div>
             <h2>Search Heroes</h2>
             <input type="text" id="search_hero_name" placeholder="Hero Name">
+            <input type="number" id="search_popularity" placeholder="Popularity (0-100)">
+            <input type="text" id="search_status" placeholder="Status">
             <button onclick="searchHeroes()">Search</button>
             <div id="hero_results"></div>
         </div>
@@ -107,15 +109,27 @@
 
         async function searchHeroes() {
             const name = document.getElementById('search_hero_name').value;
-            const response = await fetch(`/heroes?name=${name}`);
+            const popularity = document.getElementById('search_popularity').value;
+            const status = document.getElementById('search_status').value;
+
+            const queryParams = new URLSearchParams();
+            if (name) queryParams.append('name', name);
+            if (popularity) queryParams.append('popularity', popularity);
+            if (status) queryParams.append('status', status);
+
+            const response = await fetch(`/heroes?${queryParams.toString()}`);
             const heroes = await response.json();
             const resultsDiv = document.getElementById('hero_results');
             resultsDiv.innerHTML = '';
-            heroes.forEach(hero => {
-                const heroDiv = document.createElement('div');
-                heroDiv.textContent = `Hero: ${hero[2]}, Popularity: ${hero[10]}, Status: ${hero[11]}`;
-                resultsDiv.appendChild(heroDiv);
-            });
+            if (heroes.message) {
+                resultsDiv.textContent = heroes.message; // Exibe a mensagem de "nenhum herói encontrado"
+            } else {
+                heroes.forEach(hero => {
+                    const heroDiv = document.createElement('div');
+                    heroDiv.textContent = `Hero: ${hero[2]}, Popularity: ${hero[10]}, Status: ${hero[11]}`;
+                    resultsDiv.appendChild(heroDiv);
+                });
+            }
         }
 
         async function updateHero() {
