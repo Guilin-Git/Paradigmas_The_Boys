@@ -1,6 +1,8 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 import sqlite3
 import os
+import random
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -26,6 +28,11 @@ def serve_crimes():
 @app.route('/missao-heroi.html')
 def serve_mission_hero():
     return send_from_directory('', 'missao-heroi.html')
+
+@app.route('/batalha.html')
+def serve_batalha():
+    return send_from_directory('', 'batalha.html')
+
 
 @app.route('/heroes', methods=['POST'])
 def add_hero():
@@ -230,6 +237,138 @@ def get_heroes_list():
     heroes = cursor.fetchall()
     conn.close()
     return jsonify(heroes)
+
+
+
+
+# Função para gerar uma história de batalha
+def generate_battle_story(hero1, hero2, climate_factor, location_factor, battle_result):
+    battle_story = []
+    battle_story.append(f"A batalha entre {hero1[1]} e {hero2[1]} no clima {climate_factor} e local {location_factor} começou!\n")
+    battle_story.append(f"{hero1[1]} se preparou para a luta, enquanto {hero2[1]} estava pronto para vencer.\n")
+
+    if battle_result == 'empate':
+        battle_story.append("A batalha terminou em empate, ambos os heróis estavam igualmente fortes!\n")
+    else:
+        winner = hero1 if battle_result == hero1[1] else hero2
+        loser = hero2 if winner == hero1 else hero1
+        battle_story.append(f"Após uma luta intensa, {winner[1]} venceu {loser[1]} no {climate_factor}!\n")
+    
+    battle_story.append("A batalha foi marcada por incríveis momentos de heroísmo!\n")
+    return "".join(battle_story)
+
+@app.route('/battle', methods=['POST'])
+def simulate_battle():
+    data = request.json
+    hero1_id = data['hero1_id']
+    hero2_id = data['hero2_id']
+
+    # Conectar ao banco de dados
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    # Buscar informações dos heróis
+    cursor.execute('SELECT id, hero_name, strength_level, popularity, battle_history FROM heroes WHERE id = ?', (hero1_id,))
+    hero1 = cursor.fetchone()
+    cursor.execute('SELECT id, hero_name, strength_level, popularity, battle_history FROM heroes WHERE id = ?', (hero2_id,))
+    hero2 = cursor.fetchone()
+
+    if not hero1 or not hero2:
+        return jsonify({'message': 'Herói(s) não encontrado(s).'}), 404
+
+    # Fatores básicos
+    hero1_strength = hero1[2] if hero1[2] else 0
+    hero2_strength = hero2[2] if hero2[2] else 0
+
+    # Adiciona variação aleatória de força
+    hero1_strength += random.randint(-10, 10)
+    hero2_strength += random.randint(-10, 10)
+
+    # Penalidade ou bônus para heróis mais fracos
+    strength_gap = abs(hero1_strength - hero2_strength)
+    if hero1_strength < hero2_strength:
+        hero1_strength += int(strength_gap * 0.4)  # Bônus de 40% da diferença
+    elif hero2_strength < hero1_strength:
+        hero2_strength += int(strength_gap * 0.4)
+
+    # Bônus de popularidade
+    hero1_bonus = int(hero1[3] * 0.5)
+    hero2_bonus = int(hero2[3] * 0.5)
+
+    # Fatores aleatórios de clima e local
+    climate_factor = random.choice(["sunny", "rainy", "windy", "foggy", "stormy"])
+    location_factor = random.choice(["open_field", "urban_area", "forest", "mountain", "arena"])
+
+    # Impacto do clima e local
+    climate_impact = {"sunny": 5, "rainy": -5, "windy": 2, "foggy": -3, "stormy": -7}
+    location_impact = {"open_field": 5, "urban_area": 3, "forest": -2, "mountain": 0, "arena": 10}
+
+    hero1_climate_effect = climate_impact[climate_factor] + location_impact[location_factor]
+    hero2_climate_effect = climate_impact[climate_factor] + location_impact[location_factor]
+
+    # Fator de sorte
+    hero1_luck = random.randint(-5, 10)
+    hero2_luck = random.randint(-5, 10)
+
+    # Calcula pontuação final
+    hero1_final_score = hero1_strength + hero1_bonus + hero1_climate_effect + hero1_luck
+    hero2_final_score = hero2_strength + hero2_bonus + hero2_climate_effect + hero2_luck
+
+    # Adiciona chance de lesão (impacto negativo aleatório)
+    if random.random() < 0.2:  # 20% de chance de lesão
+        injury_penalty = random.randint(5, 15)
+        if hero1_final_score > hero2_final_score:
+            hero1_final_score -= injury_penalty
+        else:
+            hero2_final_score -= injury_penalty
+
+    # Determinar vencedor
+    winner, loser = None, None
+    battle_log = [f"Batalha no clima {climate_factor} e local {location_factor}!\n"]
+
+    if hero1_final_score > hero2_final_score:
+        winner, loser = hero1, hero2
+        battle_log.append(f"{hero1[1]} venceu com {hero1_final_score} pontos!\n")
+        battle_log.append(f"{hero2[1]} perdeu com {hero2_final_score} pontos.\n")
+        battle_result = hero1[1]
+    elif hero2_final_score > hero1_final_score:
+        winner, loser = hero2, hero1
+        battle_log.append(f"{hero2[1]} venceu com {hero2_final_score} pontos!\n")
+        battle_log.append(f"{hero1[1]} perdeu com {hero1_final_score} pontos.\n")
+        battle_result = hero2[1]
+    else:
+        battle_log.append("A batalha terminou em empate!\n")
+        battle_log.append(f"Ambos os heróis tiveram a mesma força final: {hero1_final_score}\n")
+        return jsonify({'result': 'Empate!', 'battle_log': battle_log}), 200
+
+    # Gerar história da batalha
+    battle_story = generate_battle_story(hero1, hero2, climate_factor, location_factor, battle_result)
+
+    # Atualizar banco de dados
+    winner_id, loser_id = winner[0], loser[0]
+    cursor.execute('UPDATE heroes SET popularity = popularity + 10, battle_history = battle_history || ? WHERE id = ?',
+                   (f'Vitória contra {loser[1]} no clima {climate_factor} em {location_factor}; ', winner_id))
+    cursor.execute('UPDATE heroes SET popularity = popularity - 5, battle_history = battle_history || ? WHERE id = ?',
+                   (f'Derrota para {winner[1]} no clima {climate_factor} em {location_factor}; ', loser_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        'result': f'{winner[1]} venceu {loser[1]}!',
+        'battle_log': battle_log,
+        'battle_story': battle_story,  # História da batalha
+        'battle_details': {
+            'climate': climate_factor,
+            'location': location_factor,
+            'hero1_strength': hero1_strength,
+            'hero2_strength': hero2_strength,
+            'hero1_bonus': hero1_bonus,
+            'hero2_bonus': hero2_bonus,
+            'hero1_luck': hero1_luck,
+            'hero2_luck': hero2_luck
+        }
+    }), 200
+
 
 if __name__ == '__main__':
     conn = create_connection()
