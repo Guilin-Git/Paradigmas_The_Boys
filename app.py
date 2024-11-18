@@ -23,6 +23,10 @@ def serve_missions():
 def serve_crimes():
     return send_from_directory('', 'crimes.html')
 
+@app.route('/missao-heroi.html')
+def serve_mission_hero():
+    return send_from_directory('', 'missao-heroi.html')
+
 @app.route('/heroes', methods=['POST'])
 def add_hero():
     data = request.json
@@ -73,35 +77,56 @@ def update_hero(hero_id):
     
 @app.route('/crimes', methods=['POST'])
 def add_crime():
-    data = request.json
-    crime_data = (
-        data['crime_name'], data['crime_description'], data['hero_id'], data['crime_date'],
-        data['hero_name'], data['crime_severity']
-    )
+    data = request.get_json()
     conn = create_connection()
     cursor = conn.cursor()
-    cursor.execute('''
-    INSERT INTO crimes (crime_name, crime_description, hero_id, crime_date, hero_name, crime_severity)
-    VALUES (?, ?, ?, ?, ?, ?)
-    ''', crime_data)
+    cursor.execute("""
+        INSERT INTO crimes (crime_name, crime_description, hero_id, hero_name, crime_date, crime_severity)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        data['crime_name'], data['crime_description'], data['hero_id'], data['hero_name'], data['crime_date'],
+        data['crime_severity']
+    ))
     conn.commit()
     conn.close()
     return jsonify({'message': 'Crime added successfully'}), 201
 
 @app.route('/heroes', methods=['GET'])
 def search_heroes():
-    name = request.args.get('name')
+    name = request.args.get('name', type=str)
+    popularity = request.args.get('popularity', type=int)
+    status = request.args.get('status', type=str)
+    
+    print(f"Received parameters - Name: {name}, Popularity: {popularity}, Status: {status}")
+    
     conn = create_connection()
     cursor = conn.cursor()
     query = "SELECT * FROM heroes WHERE 1=1"
     params = []
+    
     if name:
         query += " AND hero_name LIKE ?"
         params.append(f"%{name}%")
+    
+    if popularity is not None:
+        query += " AND popularity = ?"
+        params.append(popularity)
+    
+    if status:
+        query += " AND status = ?"
+        params.append(status)
+    
+    print(f"Executing query: {query} with params: {params}")
+    
     cursor.execute(query, params)
     results = cursor.fetchall()
     conn.close()
+    
+    if not results:
+        return jsonify({'message': 'No heroes found matching the criteria'}), 404
+    
     return jsonify(results)
+
 
 @app.route('/crimes', methods=['GET'])
 def search_crimes():
@@ -154,6 +179,22 @@ def search_missions():
     conn.close()
     return jsonify(results)
 
+@app.route('/mission_heroes', methods=['POST'])
+def add_hero_mission():
+    data = request.json
+    hero_mission_data = (
+        data['hero_id'], data['mission_id'], data['mission_name'], data['hero_name'],
+    )
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+    INSERT INTO mission_heroes (hero_id, mission_id, mission_name, hero_name)
+    VALUES (?, ?, ?, ?)
+    ''', hero_mission_data)
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Mission linked to hero successfully'}), 201
+
 @app.route('/missions/<int:mission_id>', methods=['PUT'])
 def update_mission(mission_id):
     data = request.json
@@ -181,6 +222,14 @@ def delete_mission(mission_id):
     conn.close()
     return jsonify({'message': 'Mission deleted successfully'}), 200
 
+@app.route('/heroes_list', methods=['GET'])
+def get_heroes_list():
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, hero_name FROM heroes")
+    heroes = cursor.fetchall()
+    conn.close()
+    return jsonify(heroes)
 
 if __name__ == '__main__':
     conn = create_connection()
@@ -227,13 +276,33 @@ if __name__ == '__main__':
     UPDATE heroes
     SET popularity = 
         CASE
-            WHEN NEW.crime_severity BETWEEN 0 AND 50 THEN 20
-            WHEN NEW.crime_severity BETWEEN 51 AND 100 THEN 40
-            ELSE 0
+            WHEN NEW.crime_severity BETWEEN 0 AND 10 THEN popularity - 10
+            WHEN NEW.crime_severity BETWEEN 11 AND 20 THEN popularity - 20
+            WHEN NEW.crime_severity BETWEEN 21 AND 30 THEN popularity - 30
+            WHEN NEW.crime_severity BETWEEN 31 AND 40 THEN popularity - 40
+            WHEN NEW.crime_severity BETWEEN 41 AND 50 THEN popularity - 50
+            WHEN NEW.crime_severity BETWEEN 51 AND 60 THEN popularity - 60
+            WHEN NEW.crime_severity BETWEEN 61 AND 70 THEN popularity - 70
+            WHEN NEW.crime_severity BETWEEN 71 AND 80 THEN popularity - 80
+            WHEN NEW.crime_severity BETWEEN 81 AND 90 THEN popularity - 90
+            WHEN NEW.crime_severity BETWEEN 91 AND 100 THEN popularity - 100
+            ELSE popularity
         END
     WHERE id = NEW.hero_id;
     END
     ''')
+
+    cursor.execute('''
+    CREATE TRIGGER IF NOT EXISTS update_hero_status
+    AFTER UPDATE OF popularity ON heroes
+    FOR EACH ROW
+    WHEN NEW.popularity <= 20
+    BEGIN
+        UPDATE heroes
+        SET status = 'banido'
+        WHERE id = NEW.id;
+    END
+''')
     
     conn.commit()
     conn.close()

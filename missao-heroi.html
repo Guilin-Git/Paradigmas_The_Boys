@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vincular Missão a Herói</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1c1c1c;
+            color: #fff;
+            text-align: center;
+        }
+        .container {
+            margin: 20px;
+        }
+        input, button, select {
+            margin: 5px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #960000;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #c80000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vincular Missão a Herói</h1>
+        <div>
+            <h2>Adicionar Missão a Herói</h2>
+            <select id="mission_id">
+                <option value="">Selecione a Missão</option>
+            </select>
+            <input type="text" id="mission_name" placeholder="Nome da Missão" readonly>
+            <select id="hero_name">
+                <option value="">Selecione o Herói</option>
+            </select>
+            <input type="number" id="hero_id" placeholder="ID do Herói" readonly>
+            <button onclick="addHeroMission()">Vincular Missão</button>
+        </div>
+        <div>
+            <button onclick="goBack()">Voltar para Home</button>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/missions')
+                .then(response => response.json())
+                .then(data => {
+                    const missionDropdown = document.getElementById('mission_id');
+                    data.forEach(mission => {
+                        const option = document.createElement('option');
+                        option.value = mission[0]; // Assuming the first element is the mission ID
+                        option.textContent = mission[1]; // Assuming the second element is the mission name
+                        missionDropdown.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching missions:', error));
+
+            fetch('/heroes_list')
+                .then(response => response.json())
+                .then(data => {
+                    const heroDropdown = document.getElementById('hero_name');
+                    data.forEach(hero => {
+                        const option = document.createElement('option');
+                        option.value = hero[0]; // Assuming the first element is the hero ID
+                        option.textContent = hero[1]; // Assuming the second element is the hero name
+                        heroDropdown.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching heroes:', error));
+            
+            document.getElementById('mission_id').addEventListener('change', function() {
+                const selectedMissionName = this.options[this.selectedIndex].text;
+                document.getElementById('mission_name').value = selectedMissionName;
+            });
+
+            document.getElementById('hero_name').addEventListener('change', function() {
+                const selectedHeroId = this.value;
+                const selectedHeroName = this.options[this.selectedIndex].text;
+                document.getElementById('hero_id').value = selectedHeroId;
+                document.getElementById('hero_name').value = selectedHeroName;
+            });
+        });
+
+        async function addHeroMission() {
+            const heroMission = {
+                mission_id: document.getElementById('mission_id').value,
+                mission_name: document.getElementById('mission_name').value,
+                hero_id: document.getElementById('hero_id').value,
+                hero_name: document.getElementById('hero_name').value
+            };
+
+            const response = await fetch('/mission_heroes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(heroMission)
+            });
+
+            if (response.ok) {
+                alert('Missão vinculada ao herói com sucesso');
+            } else {
+                alert('Erro ao vincular missão ao herói');
+            }
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>
+
+
+
+Arrumar o campo nome do heroi que esta completando com o id mas o nome do heroi fica em branco.
+
+Adicionar um botao na tela de adicionar missao para vinular uma missao a um heroi. /missao-heroi.html
+
+Adicionar a logica de poder adicionar determinadas missoes apenas para herois com determinados niveis de poderes e popularidade.
