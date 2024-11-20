@@ -405,6 +405,33 @@ if __name__ == '__main__':
         FOREIGN KEY (hero_id) REFERENCES heroes (id)
     )
     ''')
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS missions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mission_name TEXT NOT NULL,
+    description TEXT,
+    difficulty_level INTEGER,
+    result TEXT,
+    rewards TEXT
+    )
+    ''')
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS mission_heroes (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    hero_id    INTEGER,
+    mission_id INTEGER,
+    FOREIGN KEY (
+        hero_id
+    )
+    REFERENCES heroes (id),
+    FOREIGN KEY (
+        mission_id
+    )
+    REFERENCES missions (id) 
+    );
+    ''')
     
     # Create trigger to update hero popularity
     cursor.execute('''
@@ -435,13 +462,17 @@ if __name__ == '__main__':
     CREATE TRIGGER IF NOT EXISTS update_hero_status
     AFTER UPDATE OF popularity ON heroes
     FOR EACH ROW
-    WHEN NEW.popularity <= 20
     BEGIN
         UPDATE heroes
-        SET status = 'banido'
+        SET status = 
+            CASE
+                WHEN NEW.popularity <= 20 THEN 'banido'
+                WHEN NEW.popularity > 70 THEN 'ativo'
+                ELSE status
+            END
         WHERE id = NEW.id;
     END
-''')
+    ''')
     
     conn.commit()
     conn.close()
