@@ -82,6 +82,34 @@ def update_hero(hero_id):
     conn.close()
     return jsonify({'message': 'Hero updated successfully'}), 200
     
+@app.route('/heroes/<int:hero_id>', methods=['GET'])
+def get_hero_by_id(hero_id):
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM heroes WHERE id = ?', (hero_id,))
+    hero = cursor.fetchone()
+    conn.close()
+
+    if not hero:
+        return jsonify({'message': 'Hero not found'}), 404
+
+    # Retorna os dados do herói em formato JSON
+    return jsonify({
+        'id': hero[0],
+        'real_name': hero[1],
+        'hero_name': hero[2],
+        'gender': hero[3],
+        'height': hero[4],
+        'weight': hero[5],
+        'birth_date': hero[6],
+        'birth_place': hero[7],
+        'powers': hero[8],
+        'strength_level': hero[9],
+        'popularity': hero[10],
+        'status': hero[11],
+        'battle_history': hero[12]
+    })
+
 @app.route('/crimes', methods=['POST'])
 def add_crime():
     data = request.get_json()
@@ -159,17 +187,18 @@ def add_mission():
     data = request.json
     mission_data = (
         data['mission_name'], data['description'], data['difficulty_level'],
-        data['result'], data['rewards']
+        data['rewards']
     )
     conn = create_connection()
     cursor = conn.cursor()
     cursor.execute('''
-    INSERT INTO missions (mission_name, description, difficulty_level, result, rewards)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO missions (mission_name, description, difficulty_level, rewards)
+    VALUES (?, ?, ?, ?)
     ''', mission_data)
     conn.commit()
     conn.close()
     return jsonify({'message': 'Mission added successfully'}), 201
+
 
 @app.route('/missions', methods=['GET'])
 def search_missions():
@@ -189,31 +218,41 @@ def search_missions():
 @app.route('/mission_heroes', methods=['POST'])
 def add_hero_mission():
     data = request.json
-    hero_mission_data = (
-        data['hero_id'], data['mission_id'], data['mission_name'], data['hero_name'],
-    )
+    mission_id = data['mission_id']
+    mission_name = data['mission_name']
+    result = data['result']
+    hero_ids = data['hero_ids']  # Array de IDs de heróis
+
     conn = create_connection()
     cursor = conn.cursor()
-    cursor.execute('''
-    INSERT INTO mission_heroes (hero_id, mission_id, mission_name, hero_name)
-    VALUES (?, ?, ?, ?)
-    ''', hero_mission_data)
+    
+    for hero_id in hero_ids:
+        cursor.execute('SELECT hero_name FROM heroes WHERE id = ?', (hero_id,))
+        hero_name = cursor.fetchone()[0]
+        hero_mission_data = (
+            hero_id, mission_id, mission_name, hero_name, result
+        )
+        cursor.execute('''
+        INSERT INTO mission_heroes (hero_id, mission_id, mission_name, hero_name, result)
+        VALUES (?, ?, ?, ?, ?)
+        ''', hero_mission_data)
+    
     conn.commit()
     conn.close()
-    return jsonify({'message': 'Mission linked to hero successfully'}), 201
+    return jsonify({'message': 'Mission linked to heroes successfully'}), 201
 
 @app.route('/missions/<int:mission_id>', methods=['PUT'])
 def update_mission(mission_id):
     data = request.json
     updated_data = (
         data['mission_name'], data['description'], data['difficulty_level'],
-        data['result'], data['rewards'], mission_id
+        data['rewards'], mission_id
     )
     conn = create_connection()
     cursor = conn.cursor()
     cursor.execute('''
     UPDATE missions
-    SET mission_name = ?, description = ?, difficulty_level = ?, result = ?, rewards = ?
+    SET mission_name = ?, description = ?, difficulty_level = ?, rewards = ?
     WHERE id = ?
     ''', updated_data)
     conn.commit()
@@ -238,7 +277,23 @@ def get_heroes_list():
     conn.close()
     return jsonify(heroes)
 
-
+@app.route('/heroes_by_difficulty/<int:difficulty_level>', methods=['GET'])
+def get_heroes_by_difficulty(difficulty_level):
+    conn = create_connection()
+    cursor = conn.cursor()
+    
+    if difficulty_level <= 30:
+        cursor.execute("SELECT id, hero_name FROM heroes")
+    elif difficulty_level >= 31 and difficulty_level <= 60:
+        cursor.execute("SELECT id, hero_name FROM heroes WHERE strength_level BETWEEN 40 AND 100")
+    elif difficulty_level >=61 and difficulty_level <= 90:
+        cursor.execute("SELECT id, hero_name FROM heroes WHERE strength_level BETWEEN 80 AND 100")
+    else:
+        cursor.execute("SELECT id, hero_name FROM heroes WHERE strength_level > 95")
+    
+    heroes = cursor.fetchall()
+    conn.close()
+    return jsonify(heroes)
 
 
 # Função para gerar uma história de batalha
@@ -377,22 +432,22 @@ if __name__ == '__main__':
     # Create tables if they don't exist
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS heroes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        real_name TEXT NOT NULL,
-        hero_name TEXT NOT NULL,
-        gender TEXT,
-        height REAL,
-        weight REAL,
-        birth_date TEXT,
-        birth_place TEXT,
-        powers TEXT,
-        strength_level INTEGER,
-        popularity INTEGER DEFAULT 0,
-        status TEXT,
-        battle_history TEXT
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    real_name      TEXT    NOT NULL,
+    hero_name      TEXT    NOT NULL,
+    gender         TEXT,
+    height         REAL,
+    weight         REAL,
+    birth_date     TEXT,
+    birth_place    TEXT,
+    powers         TEXT,
+    strength_level INTEGER,
+    popularity     INTEGER DEFAULT 0,
+    status         TEXT,
+    battle_history TEXT
     )
     ''')
-    
+
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS crimes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -408,20 +463,22 @@ if __name__ == '__main__':
 
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS missions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    mission_name TEXT NOT NULL,
-    description TEXT,
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    mission_name     TEXT    NOT NULL,
+    description      TEXT,
     difficulty_level INTEGER,
-    result TEXT,
-    rewards TEXT
+    rewards          TEXT
     )
     ''')
-    
+
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS mission_heroes (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    hero_id    INTEGER,
-    mission_id INTEGER,
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    hero_id      INTEGER,
+    mission_id   INTEGER,
+    mission_name TEXT,
+    hero_name    TEXT,
+    result       TEXT,
     FOREIGN KEY (
         hero_id
     )
@@ -471,6 +528,28 @@ if __name__ == '__main__':
                 ELSE status
             END
         WHERE id = NEW.id;
+    END
+    ''')
+
+    cursor.execute('DROP TRIGGER IF EXISTS update_hero_stats')
+
+    cursor.execute('''
+    CREATE TRIGGER IF NOT EXISTS update_hero_stats
+    AFTER INSERT ON mission_heroes
+    FOR EACH ROW
+    BEGIN
+        UPDATE heroes
+        SET strength_level = strength_level + 
+            CASE
+                WHEN NEW.result = 'Sucesso' THEN (SELECT difficulty_level FROM missions WHERE id = NEW.mission_id) / 10
+                ELSE -(SELECT difficulty_level FROM missions WHERE id = NEW.mission_id) / 10
+            END,
+            popularity = popularity + 
+            CASE
+                WHEN NEW.result = 'Sucesso' THEN (SELECT difficulty_level FROM missions WHERE id = NEW.mission_id) / 5
+                ELSE -(SELECT difficulty_level FROM missions WHERE id = NEW.mission_id) / 5
+            END
+        WHERE id = NEW.hero_id;
     END
     ''')
     

@@ -5,117 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crimes Page</title>
     <style>
-       body {
-    font-family: 'Roboto', sans-serif;
-    text-align: center;
+   html, body {
     margin: 0;
     padding: 0;
-    background-image: url('https://i0.wp.com/www.badtaste.it/tv/wp-content/uploads/sites/4/2020/07/the-boys-2-poster-patriota.jpg?w=1324&quality=85&strip=all&ssl=1');
+    height: 100%; /* Garante que o body cubra a tela toda */
+    overflow-x: hidden; /* Previne rolagem horizontal */
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    text-align: center;
+    background-image: url('https://images.hdqwalls.com/wallpapers/the-boys-s9.jpg');
     background-size: cover;
     background-repeat: no-repeat;
-    background-position: center;
+    background-position: center; /* Mantém o foco central */
     animation: backgroundAnim 15s infinite alternate;
 }
-    
-        @keyframes backgroundAnim {
-            0% { background-position: left; }
-            100% { background-position: right; }
-        }
-    
-        h1 {
-            font-size: 3rem;
-            color: #ff4747; /* Vermelho intenso para representar o caos de The Boys */
-            text-shadow: 2px 2px 10px rgba(255, 71, 71, 0.7);
-            margin-top: 30px;
-            animation: fadeIn 2s ease-out;
-        }
 
-        h2{
-            font-size: 2rem;
-            color: #ff4747; /* Vermelho intenso para representar o caos de The Boys */
-            text-shadow: 2px 2px 10px rgba(255, 71, 71, 0.7);
-        }
-    
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    
-        .container {
-            margin: 20px;
-            max-width: 800px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
-        }
-        select {
-            margin: 10px;
-            padding: 12px 20px;
-            border: 2px solid #ff4747;
-            border-radius: 5px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
+@keyframes backgroundAnim {
+    0% { background-position: left center; }
+    100% { background-position: right center; }
+}
 
-        select:focus {
-            outline: none;
-            border-color: #ff4747;
-            box-shadow: 0 0 10px rgba(255, 71, 71, 0.8);
-        }
-    
-        input, button {
-            margin: 10px;
-            padding: 12px 20px;
-            border: 2px solid #ff4747;
-            border-radius: 5px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
-    
-        input:focus, button:focus {
-            outline: none;
-            border-color: #ff4747;
-            box-shadow: 0 0 10px rgba(255, 71, 71, 0.8);
-        }
-    
-        button {
-            background-color: #960000;
-            cursor: pointer;
-            animation: pulse 1.5s infinite alternate;
-        }
-    
-        button:hover {
-            background-color: #c80000;
-        }
-    
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 0 10px rgba(255, 71, 71, 0.5);
-            }
-            100% {
-                transform: scale(1.1);
-                box-shadow: 0 0 20px rgba(255, 71, 71, 0.7);
-            }
-        }
-        .button-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-        }
+h1, h2 {
+    font-size: 3rem;
+    color: #ff4747;
+    text-shadow: 2px 2px 10px rgba(255, 71, 71, 0.7);
+    margin-top: 30px;
+    animation: fadeIn 2s ease-out;
+}
+
+h2 {
+    font-size: 2rem;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.container {
+    margin: 20px auto;
+    max-width: 800px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+}
+
+select, input, button {
+    margin: 10px;
+    padding: 12px 20px;
+    border: 2px solid #ff4747;
+    border-radius: 5px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+select:focus, input:focus, button:focus {
+    outline: none;
+    border-color: #ff4747;
+    box-shadow: 0 0 10px rgba(255, 71, 71, 0.8);
+}
+
+button {
+    background-color: #960000;
+    cursor: pointer;
+    animation: pulse 1.5s infinite alternate;
+}
+
+button:hover {
+    background-color: #c80000;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 10px rgba(255, 71, 71, 0.5);
+    }
+    100% {
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(255, 71, 71, 0.7);
+    }
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
     </style>
 </head>
 <body>
@@ -199,8 +187,15 @@
             resultsDiv.innerHTML = '';
             crimes.forEach(crime => {
                 const crimeDiv = document.createElement('div');
-                crimeDiv.textContent = `Crime: ${crime[1]}, Hero: ${crime[5]}, Severity: ${crime[6]}`;
-                resultsDiv.appendChild(crimeDiv);
+                crimeDiv.innerHTML = `
+                        <p><strong>Crime Name:</strong> ${crime[1]}</p>
+                        <p><strong>Description:</strong> ${crime[2]}</p>
+                        <p><strong>Hero ID:</strong> ${crime[3]}</p>
+                        <p><strong>Crime Date:</strong> ${crime[4]}</p>
+                        <p><strong>Hero Name:</strong> ${crime[5]}</p>
+                        <p><strong>Crime Severity:</strong> ${crime[6]}</p>
+                    `;                
+                    resultsDiv.appendChild(crimeDiv);
             });
         }
 
@@ -209,12 +204,4 @@
         }
     </script>
 </body>
-</html>
-
-
-//Dropdow aadicionado para a selecaio de heroi, tentar adiconar a mesma função para o search do heroi, para facilitar a busca
-//funcao para adicionar crime funcionando corretamente, Conferir se o trigger esta funcionando corretamente 
-//ou se esta diminuindo os valores de popularidade de forma exagerada,
-//adicionar outro trigger para conseguir laterar o status do heroi caso ele atinja um nivel de popularidade muito baixo
-//ele podera ser banido
-//começar ver a parte de missoes 
+</html> 

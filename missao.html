@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Missões - The Boys</title>
+    <title>MissÃµes - The Boys</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,7 +38,6 @@
             <input type="text" id="mission_name" placeholder="Mission Name">
             <input type="text" id="description" placeholder="Description">
             <input type="number" id="difficulty_level" placeholder="Difficulty Level (0-100)">
-            <input type="text" id="result" placeholder="Result">
             <input type="text" id="rewards" placeholder="Rewards">
             <button onclick="addMission()">Add Mission</button>
         </div>
@@ -54,7 +53,6 @@
             <input type="text" id="update_mission_name" placeholder="Mission Name">
             <input type="text" id="update_description" placeholder="Description">
             <input type="number" id="update_difficulty_level" placeholder="Difficulty Level (0-100)">
-            <input type="text" id="update_result" placeholder="Result">
             <input type="text" id="update_rewards" placeholder="Rewards">
             <button onclick="updateMission()">Update Mission</button>
         </div>
@@ -62,6 +60,9 @@
             <h2>Delete Mission</h2>
             <input type="number" id="delete_mission_id" placeholder="Mission ID">
             <button onclick="deleteMission()">Delete Mission</button>
+        </div>
+        <div>
+            <button onclick="goToMissionHero()">Go to Mission-Hero</button>
         </div>
         <div>
             <button onclick="goBack()">Back to Home</button>
@@ -73,7 +74,6 @@
                 mission_name: document.getElementById('mission_name').value,
                 description: document.getElementById('description').value,
                 difficulty_level: document.getElementById('difficulty_level').value,
-                result: document.getElementById('result').value,
                 rewards: document.getElementById('rewards').value
             };
             const response = await fetch('/missions', {
@@ -95,8 +95,13 @@
             resultsDiv.innerHTML = '';
             missions.forEach(mission => {
                 const missionDiv = document.createElement('div');
-                missionDiv.textContent = `Mission: ${mission[1]}, Difficulty: ${mission[3]}, Result: ${mission[4]}`;
-                resultsDiv.appendChild(missionDiv);
+                missionDiv.innerHTML = `
+                        <p><strong>Mission Name:</strong> ${mission[1]}</p>
+                        <p><strong>Description:</strong> ${mission[2]}</p>
+                        <p><strong>Difficulty Level:</strong> ${mission[3]}</p>
+                        <p><strong>Rewards:</strong> ${mission[4]}</p>
+                    `;                
+                    resultsDiv.appendChild(missionDiv);
             });
         }
 
@@ -106,7 +111,6 @@
                 mission_name: document.getElementById('update_mission_name').value,
                 description: document.getElementById('update_description').value,
                 difficulty_level: document.getElementById('update_difficulty_level').value,
-                result: document.getElementById('update_result').value,
                 rewards: document.getElementById('update_rewards').value
             };
             const response = await fetch(`/missions/${mission_id}`, {
@@ -127,6 +131,10 @@
             });
             const result = await response.json();
             alert(result.message);
+        }
+
+        function goToMissionHero() {
+            window.location.href = '/missao-heroi.html';
         }
 
         function goBack() {
