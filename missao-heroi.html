@@ -24,6 +24,23 @@
             0% { background-position: left; }
             100% { background-position: right; }
         }
+
+        .custom-select {
+            margin: 10px;
+            padding: 12px 20px;
+            border: 2px solid #ff4747;
+            border-radius: 5px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            appearance: none; /* Remove o estilo padrão do navegador */
+        }
+
+        .custom-select:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(255, 71, 71, 0.8);
+        }
     
         h1, h2 {
             color: #ff4747;
@@ -76,6 +93,40 @@
             outline: none;
             box-shadow: 0 0 10px rgba(255, 71, 71, 0.8);
         }
+        .select2-container--default .select2-selection--multiple {
+            border: 2px solid #ff4747;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 5px;
+            padding: 5px;
+            color: #fff;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #ff4747;
+            color: #fff;
+            border-radius: 3px;
+            padding: 5px 10px;
+            margin: 3px;
+            font-size: 0.9rem;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: #fff;
+            cursor: pointer;
+        }
+        .select2-container--default .select2-results__options {
+            background-color: #000; /* Cor do fundo */
+        }
+
+        .select2-container--default .select2-results__option {
+            background-color: #000; /* Fundo dos itens individuais */
+            color: #fff; /* Ajuste a cor do texto para contraste, se necessário */
+        }
+
+        .select2-container--default .select2-results__option--highlighted {
+            background-color: #444; /* Cor de destaque ao passar o mouse */
+            color: #fff; /* Cor do texto no item destacado */
+        }
     
         button {
             cursor: pointer;
@@ -96,6 +147,8 @@
                 transform: scale(1.1);
                 box-shadow: 0 0 20px rgba(255, 71, 71, 0.7);
             }
+
+            
         }
     </style>    
 </head>
@@ -108,7 +161,7 @@
                 <option value="">Selecione a Missão</option>
             </select>
             <input type="text" id="mission_name" placeholder="Nome da Missão" readonly>
-            <select id="hero_id" multiple>
+            <select id="hero_id"  class="custom-select" multiple>
                 <option value="">Selecione os Heróis</option>
             </select>
             <input type="text" id="hero_name" placeholder="Nome dos Heróis" readonly>
